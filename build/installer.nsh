@@ -6,4 +6,8 @@
 !macroend
 !macro customUnInstall
   nsExec::Exec 'netsh advfirewall firewall delete rule name="Manage with Bunny"'
+  ; remove the "start with Windows" entry the app created for this user (not when updating to a newer version)
+  ${ifNot} ${isUpdated}
+    DeleteRegValue HKCU "Software\Microsoft\Windows\CurrentVersion\Run" "com.bunnysframelab.managewithbunny"
+  ${endIf}
 !macroend

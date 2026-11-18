@@ -80,7 +80,7 @@ footer img { width: 54px; height: 54px; margin-bottom: 10px; }
 <body>
 <nav class="top"><div class="wrap">
   <a class="brand" href="#top"><img src="assets/logo.png" alt=""><span>Manage with Bunny</span></a>
-  <a class="l" href="#download">Download</a><a class="l" href="#setup">Setup</a><a class="l" href="#use">Daily use</a><a class="l" href="#remote">Remote team</a><a class="l" href="#network">Network</a><a class="l" href="#security">Security</a><a class="l" href="UI.html">See the UI</a>
+  <a class="l" href="#download">Install</a><a class="l" href="#uninstall">Uninstall</a><a class="l" href="#setup">Setup</a><a class="l" href="#guide">Features</a><a class="l" href="#network">Network</a><a class="l" href="#security">Security</a><a class="l" href="#limits">Limitations</a><a class="l" href="UI.html">See the UI</a>
 </div></nav>
 
 <header class="hero" id="top">
@@ -90,8 +90,8 @@ footer img { width: 54px; height: 54px; margin-bottom: 10px; }
     <h1>Manage with <span class="gr">Bunny</span></h1>
     <p class="lead">Private team chat, voice messages, big file transfer, task pipelines, team chart, records and monthly performance tracking. Everything runs on your own Wi-Fi and is stored on your own computer.</p>
     <div class="btns">
-      <a class="btn primary" href="https://github.com/uday629/manage-with-bunny/releases/latest">Download for Windows <small>.exe</small></a>
-      <a class="btn" href="https://github.com/uday629/manage-with-bunny/releases/latest">Download for Mac <small>.dmg</small></a>
+      <a class="btn primary" href="https://github.com/uday629/manage-with-bunny/releases/latest">Download everything <small>.zip</small></a>
+      <a class="btn" href="#download">How to install</a>
       <a class="btn" href="UI.html">See the app</a>
     </div>
     <p style="margin-top:22px;font-size:14px">Version 1.3.0 · Made by <b style="color:#fff">Bunnys Framelab</b> · <a href="https://framelabmedia.odoo.com/">framelabmedia.odoo.com</a> · <a href="https://www.instagram.com/bunnysframelab/">@bunnysframelab</a></p>
@@ -115,25 +115,73 @@ footer img { width: 54px; height: 54px; margin-bottom: 10px; }
 <section id="download"><div class="wrap">
   <span class="mono">Download &amp; install</span>
   <h2>Install in <span class="gr">two clicks</span></h2>
+  <p style="max-width:780px">Download <b style="color:#fff">Manage-with-Bunny-1.3.0-Complete.zip</b> from the <a href="https://github.com/uday629/manage-with-bunny/releases/latest">Releases page</a> (one file with everything), right-click it and choose <b style="color:#fff">Extract All</b>. Inside you find:</p>
+  <div class="tablewrap" style="margin-bottom:22px"><table>
+    <tr><th>In the ZIP</th><th>What it is</th></tr>
+    <tr><td><code>Windows/Manage-with-Bunny-Setup-1.3.0.exe</code></td><td>Installer for Windows 10 / 11 (64-bit)</td></tr>
+    <tr><td><code>Mac (Apple Silicon)/...-arm64.dmg</code></td><td>Installer for Macs with M1, M2, M3 or M4 (Apple menu, About This Mac shows "Apple M...")</td></tr>
+    <tr><td><code>Mac (Intel)/...-x64.dmg</code></td><td>Installer for Intel Macs (About This Mac shows "Intel")</td></tr>
+    <tr><td><code>README.html</code></td><td>This guide (works without internet)</td></tr>
+    <tr><td><code>UI.html</code></td><td>Tour of every screen with real screenshots</td></tr>
+    <tr><td><code>SECURITY_REPORT.md</code>, <code>SHA256SUMS.txt</code></td><td>Security details and checksums to verify the installers</td></tr>
+  </table></div>
+  <h3>What you need</h3>
+  <div class="grid g3" style="margin-bottom:22px">
+    <div class="card"><h3>Every computer</h3><ul><li>Windows 10/11 64-bit, or macOS 12 or newer</li><li>About 400 MB free disk space for the app</li><li>Admin permission once, to install</li></ul></div>
+    <div class="card"><h3>The host computer</h3><ul><li>Stays on during work hours</li><li>Plenty of free space for the team's files and videos (a drive other than C: is best)</li><li>Office Wi-Fi or a network cable</li></ul></div>
+    <div class="card"><h3>The network</h3><ul><li>Everyone on the same Wi-Fi / office network</li><li>Not a guest network (those block devices from seeing each other)</li><li>No internet needed after downloading</li></ul></div>
+  </div>
   <div class="grid g2">
     <div class="card">
-      <h3>Windows 10 / 11</h3>
+      <h3>Install on Windows 10 / 11</h3>
       <ol>
-        <li>Download <code>Manage-with-Bunny-Setup-1.3.0.exe</code> from the <a href="https://github.com/uday629/manage-with-bunny/releases/latest">Releases page</a>.</li>
-        <li>Double-click it and press <b>Yes</b> on the Windows permission prompt. It installs, adds a desktop shortcut and opens.</li>
-        <li>If Windows shows <b>"Windows protected your PC"</b>: click <b>More info</b> then <b>Run anyway</b> (see <a href="#security">why</a>).</li>
+        <li>Open the <code>Windows</code> folder and double-click <code>Manage-with-Bunny-Setup-1.3.0.exe</code>.</li>
+        <li>If Windows shows <b>"Windows protected your PC"</b>: click <b>More info</b>, then <b>Run anyway</b> (the installer is not code-signed yet, see <a href="#security">why</a>).</li>
+        <li>Press <b>Yes</b> on the "allow this app to make changes" prompt. It installs in a few seconds, adds a desktop and Start-menu shortcut, allows the app through Windows Firewall for your local network only, and opens.</li>
+        <li>If Windows Firewall still asks, tick <b>Private networks</b> and click <b>Allow</b>.</li>
+        <li>Continue with <a href="#setup">First-time setup</a>.</li>
+      </ol>
+      <p style="margin-top:12px"><b style="color:#fff">Updating:</b> install the newer setup file over the old one. Your account, settings and all workspace data stay.</p>
+    </div>
+    <div class="card">
+      <h3>Install on macOS 12+</h3>
+      <ol>
+        <li>Open the <code>Mac (Apple Silicon)</code> or <code>Mac (Intel)</code> folder and double-click the <code>.dmg</code>.</li>
+        <li>Drag <b>Manage with Bunny</b> onto the <b>Applications</b> folder, then eject the disk image.</li>
+        <li>The first time: open Applications, <b>right-click</b> Manage with Bunny, choose <b>Open</b>, then <b>Open</b> again. If macOS still refuses: System Settings, Privacy &amp; Security, scroll down and click <b>Open Anyway</b>.</li>
+        <li>Allow <b>Local Network</b> access when asked (needed to find the host), <b>Microphone</b> only if you want voice messages, and <b>incoming connections</b> if this Mac will be the host.</li>
+        <li>Continue with <a href="#setup">First-time setup</a>.</li>
+      </ol>
+      <p style="margin-top:12px"><b style="color:#fff">Updating:</b> drag the new version into Applications and choose Replace. Your data stays.</p>
+    </div>
+  </div>
+</div></section>
+
+<section id="uninstall"><div class="wrap">
+  <span class="mono">Uninstall</span>
+  <h2>Remove the <span class="gr">app</span></h2>
+  <div class="note warn"><b>The workspace data is never deleted automatically.</b>&nbsp;On the host computer the storage folder you chose (messages database, files, videos, backups) stays on the disk so nothing is lost by accident. Delete it yourself only if you are sure, or keep it to host again later ("Host a workspace", "Open existing data folder").</div>
+  <div class="grid g2">
+    <div class="card">
+      <h3>Windows</h3>
+      <ol>
+        <li>Quit the app: right-click the bunny icon in the system tray (bottom-right, maybe under the ^ arrow) and choose <b>Quit</b>.</li>
+        <li>Open <b>Settings, Apps, Installed apps</b>, find <b>Manage with Bunny</b>, click <b>...</b> and <b>Uninstall</b> (or Control Panel, Programs and Features).</li>
+        <li>The uninstaller removes the app, its shortcuts, its Windows Firewall rule and its "start with Windows" entry.</li>
+        <li>Optional, to remove everything: delete <code>%APPDATA%\Manage with Bunny</code> (sign-in and app settings) and, on the host only, the storage folder you chose.</li>
       </ol>
     </div>
     <div class="card">
-      <h3>macOS 12+ (Intel and Apple Silicon)</h3>
+      <h3>macOS</h3>
       <ol>
-        <li>Download the <code>.dmg</code> for your Mac: <code>arm64</code> for M1/M2/M3/M4, <code>x64</code> for Intel.</li>
-        <li>Open it and drag <b>Manage with Bunny</b> into <b>Applications</b>.</li>
-        <li>The first time: right-click the app, choose <b>Open</b>, then <b>Open</b> again (the app is not yet notarized by Apple). If macOS still refuses, open System Settings, Privacy &amp; Security, and click <b>Open Anyway</b>.</li>
-        <li>Allow <b>Local Network</b> access when asked, and the microphone if you want voice messages.</li>
+        <li>Quit the app: click the bunny icon in the menu bar and choose <b>Quit</b>.</li>
+        <li>Drag <b>Manage with Bunny</b> from <b>Applications</b> to the <b>Trash</b>.</li>
+        <li>System Settings, General, <b>Login Items</b>: remove Manage with Bunny if it is listed.</li>
+        <li>Optional, to remove everything: delete <code>~/Library/Application Support/Manage with Bunny</code> (Finder, Go, Go to Folder) and, on the host only, the storage folder you chose.</li>
       </ol>
     </div>
   </div>
+  <p style="margin-top:14px">Leaving a team but keeping the app: Settings, <b>Leave workspace on this computer</b>. On the host: Settings, <b>Stop hosting</b> (the data folder stays).</p>
 </div></section>
 
 <section id="setup"><div class="wrap">
@@ -179,6 +227,35 @@ footer img { width: 54px; height: 54px; margin-bottom: 10px; }
       <li><b>Excel</b> and <b>PDF</b> buttons on tasks, records, performance, work logs and the security log.</li>
     </ul></div>
   </div>
+</div></section>
+
+<section id="guide"><div class="wrap">
+  <span class="mono">Feature guide</span>
+  <h2>What each part <span class="gr">does</span> and how it works</h2>
+  <div class="tablewrap"><table>
+    <tr><th style="width:170px">Feature</th><th>What it does</th><th>How it works</th></tr>
+    <tr><td><b>Host</b></td><td>One computer keeps all messages, files and data for the team.</td><td>The app runs a small secure server in the background on that computer, starts with the computer and stays in the tray. Data lives in the storage folder you chose. A database backup is made every day (14 kept).</td></tr>
+    <tr><td><b>Join &amp; approval</b></td><td>Lets a new person into the workspace.</td><td>They paste the invite (code + address). The app finds the host, checks its identity against the code, creates their account with their own password and waits until an admin approves it and picks their role and manager.</td></tr>
+    <tr><td><b>Roles &amp; permissions</b></td><td>Decides who can do what.</td><td>Owner, Manager, HR, Team Leader, Employee are ready; create any other position in Admin, Roles. 12 permissions (approve people, manage members, see everything, message anyone, assign to anyone, storage, security log...). Nobody can give more power than they have; only the owner controls the owner account.</td></tr>
+    <tr><td><b>Team chart</b></td><td>Shows who works under whom.</td><td>Built from "Reports to" on each member. Employees see their own chain and team; people with "see the full chart" see everyone. Click a person for their profile, work log and performance.</td></tr>
+    <tr><td><b>Direct messages</b></td><td>Private one-to-one chat.</td><td>End-to-end encrypted on your computer before sending; the host stores only scrambled text. Employees can message their manager, teammates and people under them; managers and the owner can message anyone. The key icon shows a safety code you can compare in person.</td></tr>
+    <tr><td><b>Group chats</b></td><td>Team or project conversations.</td><td>Anyone with "create groups" makes a group (or "Add my whole team" in one click). Group admins rename, add and remove people. Messages are protected by access control on the host.</td></tr>
+    <tr><td><b>Voice messages</b></td><td>Speak instead of typing.</td><td>Click the microphone (when the text box is empty), talk up to 10 minutes, click <i>Send voice</i>. It plays inline with a progress wave.</td></tr>
+    <tr><td><b>Seen / not seen</b></td><td>Know if your message was read.</td><td>Clock = sending, one grey tick = sent, two blue ticks = seen. Under your last message: "Seen", "Seen by A, B" or "Not seen yet". A message counts as seen when the other person has the chat open on screen.</td></tr>
+    <tr><td><b>Search</b></td><td>Find any message.</td><td>Type at least 2 letters in the chat search box (Bengali or English, part of a word works). Group messages are searched on the host; private messages are searched on your own computer because only you can read them. Click a result to jump to it.</td></tr>
+    <tr><td><b>Files &amp; big videos</b></td><td>Send files of any size like a local-send app.</td><td>Drag into a chat, paste, or use the paper clip. The file goes to the host in pieces at full network speed; if Wi-Fi drops it continues where it stopped. Videos, images and audio play inline; Download saves a copy. Same name again = new version. Identical files are stored once.</td></tr>
+    <tr><td><b>Tasks</b></td><td>Hand out work and track it to the end.</td><td>New task: title, details, client, links, due date, priority, person. The person clicks Start, attaches the result, enters hours spent and Submits. The giver Approves (with optional 1-5 quality stars) or Requests changes with a note. Delegate splits it further down the chain. Everything is recorded in Activity.</td></tr>
+    <tr><td><b>Work report</b></td><td>One sheet of all work for any period.</td><td>Pick Today, 2, 3, 7, 30, 90 days, 6 months, 1 year or Custom; filter by person, client or type. Each row: date, person, work, who gave it, client, status, hours (or start-to-finish time), performance (on time / late / revisions / quality) and Drive links and files. Excel and PDF export.</td></tr>
+    <tr><td><b>Daily work log</b></td><td>Record daily progress and hours.</td><td>Team chart, click a person, Work log (or the Home card for remote teammates): date, hours, what was done, client, links. Counted in Performance and the Work report.</td></tr>
+    <tr><td><b>Remote teammates</b></td><td>Include people who cannot be on the office Wi-Fi.</td><td>Admin, Members, Add remote profile. No login; a caretaker starts/submits their tasks on their behalf and writes their work log. History shows who acted for whom. Activate login later with a one-time code.</td></tr>
+    <tr><td><b>Records</b></td><td>Your own private sheets.</td><td>Templates for work handed out, hiring, expenses, leads, or your own columns. Only you and people you share with can open them (not even admins). Excel, PDF, CSV export.</td></tr>
+    <tr><td><b>Performance</b></td><td>Monthly results per person.</td><td>Score = 60% on-time delivery + 40% completion rate. Shows assigned, done, on time, overdue, average time, revisions, logged hours and manager reviews (stars + note per month) with a 12-month chart.</td></tr>
+    <tr><td><b>Profile photo</b></td><td>Your picture everywhere in the app.</td><td>Settings, Add a photo: choose an image, drag to position it in the circle, zoom, Save.</td></tr>
+    <tr><td><b>Admin, Storage</b></td><td>Keep the host tidy and safe.</td><td>Disk use, de-duplication savings, old versions, delete old files, clear old group messages, optimise database, back up now, move storage to another drive (on the host).</td></tr>
+    <tr><td><b>Security log</b></td><td>See important events.</td><td>Sign-ins, failed sign-ins, approvals, role and permission changes, resets, deletions and cleanups. Message contents are never logged.</td></tr>
+    <tr><td><b>Network check</b></td><td>Fix "cannot connect".</td><td>Settings, Network check (or Check network on the yellow bar). Explains the problem in plain words and repairs the Windows firewall rule after you approve the Windows prompt.</td></tr>
+    <tr><td><b>Notifications &amp; tray</b></td><td>Never miss a message.</td><td>Desktop notifications for new messages, tasks and approvals; unread badge. Closing the window keeps the app running in the tray (can be changed in Settings).</td></tr>
+  </table></div>
 </div></section>
 
 <section id="remote"><div class="wrap">
@@ -233,6 +310,39 @@ footer img { width: 54px; height: 54px; margin-bottom: 10px; }
     <tr><td>Semgrep code scan, secret scan, dependency audit</td><td><span class="pill">no open issues in shipped code</span></td></tr>
   </table></div>
   <p style="margin-top:12px;font-size:14px">Full details: <a href="SECURITY_REPORT.md">SECURITY_REPORT.md</a>. These are internal tests; no external company has audited the app yet.</p>
+</div></section>
+
+<section id="limits"><div class="wrap">
+  <span class="mono">Limitations</span>
+  <h2>What it does <span class="gr">not</span> do (yet)</h2>
+  <div class="grid g2">
+    <div class="card"><h3>Network &amp; hosting</h3><ul>
+      <li>Works only inside the same local network; there is no access over the internet. Remote people are handled with remote profiles kept up to date by a caretaker.</li>
+      <li>If the host computer is off or asleep, nobody can send or receive until it is back (nothing is lost).</li>
+      <li>One host per workspace; there is no automatic second host.</li>
+      <li>Guest Wi-Fi and routers with AP / client isolation block it completely.</li>
+      <li>No automatic updates: download and install new versions yourself.</li>
+    </ul></div>
+    <div class="card"><h3>Features</h3><ul>
+      <li>No voice or video calls and no screen sharing.</li>
+      <li>Windows and Mac only: no mobile app and no Linux build.</li>
+      <li>Search in private chats covers the newest 2,000 messages of each chat.</li>
+      <li>Executable files (.exe, .bat, .msi...) are blocked by default; zip them or ask an admin. Default maximum file size 50 GB (admin can raise it).</li>
+      <li>Backups copy the database daily (14 kept); files are not duplicated, so copy the storage folder to another drive yourself.</li>
+    </ul></div>
+    <div class="card"><h3>Security</h3><ul>
+      <li>Group chats, tasks, records and files are not encrypted on the host's disk: turn on BitLocker / FileVault on the host.</li>
+      <li>Files and voice messages in private chats are access-controlled but not end-to-end encrypted (the text is).</li>
+      <li>If someone forgets their password, a reset code gives a new login but their old private messages cannot be read anymore.</li>
+      <li>Installers are not code-signed, so Windows / macOS warn on first run.</li>
+      <li>Security was tested internally (penetration test included); no outside company has audited it.</li>
+    </ul></div>
+    <div class="card"><h3>Tested range</h3><ul>
+      <li>Tested with 15 people at the same time and a year of data (300,000 messages, 25,000 tasks). Bigger teams should work but are not measured.</li>
+      <li>Tested with two app copies on one Windows PC; real multi-computer Wi-Fi depends on your router.</li>
+      <li>The Mac version is built and its tests pass on GitHub's Mac machines, but it has not yet been tried on a real Mac by us.</li>
+    </ul></div>
+  </div>
 </div></section>
 
 <section id="faq"><div class="wrap">

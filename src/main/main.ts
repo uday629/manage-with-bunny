@@ -586,6 +586,7 @@ app.whenReady().then(async () => {
   });
   // Create the OS-keychain key right at launch so it is persisted long before the first sign-in.
   try { if (safeStorage.isEncryptionAvailable()) safeStorage.encryptString('mwb-init'); } catch { /* */ }
+  if (app.isPackaged && load().mode) setAutoStart(load().autoStart); // keep the login item in place after updates
   installCertPinning();
   registerAppProtocol();
   registerIpc();

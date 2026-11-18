@@ -7,7 +7,13 @@ Made by <b>Bunnys Framelab</b> · <a href="https://framelabmedia.odoo.com/">fram
 
 ## Download
 
-Get the latest installers from the **[Releases](../../releases/latest)** page.
+Go to **[Releases](../../releases/latest)** and download **`Manage-with-Bunny-<version>-Complete.zip`** (one file with everything). Right-click it, **Extract All**, then open **README.html**. The ZIP contains:
+
+- `Windows/` the Windows installer, `Mac (Apple Silicon)/` and `Mac (Intel)/` the Mac installers
+- `README.html` complete guide: requirements, install, uninstall, first-time setup, how every feature works, network help, security, limitations, FAQ (works offline)
+- `UI.html` a tour of every screen, `SECURITY_REPORT.md`, `SHA256SUMS.txt`
+
+The installers are also attached to the release separately.
 
 | Platform | File | First run |
 |---|---|---|
@@ -37,6 +43,16 @@ Verify downloads with `SHA256SUMS.txt` on the release page.
 - **Export to Excel and PDF**: tasks, records, performance, work logs, security log.
 - **Admin**: join requests, members, custom roles with 12 permissions, join-code rotation, storage report and cleanup, daily backups, move storage to another drive, security log.
 - **Network check**: explains why someone cannot connect (firewall, different network, router isolation) and repairs the Windows firewall rule in one click.
+
+## Uninstall
+
+- **Windows:** quit the app from the tray icon, then Settings, Apps, Installed apps, Manage with Bunny, Uninstall. This removes the app, shortcuts, firewall rule and auto-start entry.
+- **Mac:** quit from the menu-bar icon, drag the app from Applications to the Trash, remove it from System Settings, General, Login Items.
+- Your workspace data (the host's storage folder) is never deleted automatically. App settings stay in `%APPDATA%\Manage with Bunny` (Windows) or `~/Library/Application Support/Manage with Bunny` (Mac) until you delete them.
+
+## Limitations
+
+Same local network only (no internet access; remote people use remote profiles); the host must be on; one host per workspace; guest Wi-Fi / AP isolation blocks it; no calls or screen sharing; Windows and Mac only (no mobile or Linux); no automatic updates; group data and DM attachments are not encrypted on the host's disk (use BitLocker / FileVault); a password reset makes old private messages unreadable; installers are not code-signed; tested with 15 simultaneous users and a year of data; the Mac build has not yet been tried on a real Mac. Full list in README.html.
 
 ## Network notes
 

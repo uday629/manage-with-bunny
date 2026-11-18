@@ -50,16 +50,22 @@ jobs:
     permissions:
       contents: write
     steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
       - uses: actions/download-artifact@v4
         with:
           path: dist
           merge-multiple: true
+      - name: Build the all-in-one ZIP (installers + offline guide + UI tour)
+        run: node scripts/package.mjs dist "${GITHUB_REF_NAME}"
       - name: Publish release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           cd dist
-          sha256sum *.exe *.dmg > SHA256SUMS.txt
-          gh release create "${GITHUB_REF_NAME}" *.exe *.dmg SHA256SUMS.txt \
+          sha256sum *.exe *.dmg *.zip > SHA256SUMS.txt
+          gh release create "${GITHUB_REF_NAME}" *-Complete.zip *.exe *.dmg SHA256SUMS.txt \
             --repo "${GITHUB_REPOSITORY}" --title "Manage with Bunny ${GITHUB_REF_NAME}" \
-            --notes "Windows: Manage-with-Bunny-Setup-*.exe. Mac: arm64 for Apple Silicon, x64 for Intel. Not code-signed yet: see README.html for first-run steps. Verify downloads with SHA256SUMS.txt."
+            --notes "Download Manage-with-Bunny-*-Complete.zip: it contains the Windows and Mac installers plus README.html (install, uninstall, how every feature works, limitations) and UI.html (screen tour). Installers are also attached separately. Not code-signed yet: see README.html for first-run steps. Verify downloads with SHA256SUMS.txt."
