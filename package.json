@@ -1,0 +1,135 @@
+{
+  "name": "manage-with-bunny",
+  "productName": "Manage with Bunny",
+  "version": "1.2.0",
+  "description": "Private LAN team management: chat, file transfer, tasks, org chart and performance tracking.",
+  "author": {
+    "name": "Bunnys Framelab",
+    "url": "https://framelabmedia.odoo.com/"
+  },
+  "homepage": "https://framelabmedia.odoo.com/",
+  "license": "UNLICENSED",
+  "private": true,
+  "type": "module",
+  "main": "dist/main.cjs",
+  "scripts": {
+    "build": "node build.mjs",
+    "build:dev": "node build.mjs --dev",
+    "start": "node build.mjs --dev && electron .",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test:server": "node build.mjs && esbuild tests/integration.ts --bundle --platform=node --format=cjs --target=node24 --outfile=tests/.tmp/integration.cjs --log-level=warning && node tests/.tmp/integration.cjs",
+    "dist:win": "node build.mjs && electron-builder --win --x64",
+    "dist:mac": "node build.mjs && electron-builder --mac --x64 --arm64",
+    "dist:mac:signed": "node build.mjs && electron-builder --mac --x64 --arm64 -c.mac.identity=null -c.mac.hardenedRuntime=true -c.mac.entitlements=build/entitlements.mac.plist -c.mac.entitlementsInherit=build/entitlements.mac.plist",
+    "test:pentest": "node build.mjs && esbuild tests/pentest.ts --bundle --platform=node --format=cjs --target=node24 --outfile=tests/.tmp/pentest.cjs --log-level=warning && node tests/.tmp/pentest.cjs",
+    "test:load": "node build.mjs && esbuild tests/load.ts --bundle --platform=node --format=cjs --target=node24 --outfile=tests/.tmp/load.cjs --log-level=warning && node tests/.tmp/load.cjs users && node tests/.tmp/load.cjs months"
+  },
+  "devDependencies": {
+    "@types/node": "24.9.1",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@types/ws": "8.18.1",
+    "electron": "45.3.4",
+    "electron-builder": "26.18.0",
+    "esbuild": "0.28.2",
+    "typescript": "5.9.3",
+    "hash-wasm": "4.13.0",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "ws": "8.23.0"
+  },
+  "build": {
+    "appId": "com.bunnysframelab.managewithbunny",
+    "productName": "Manage with Bunny",
+    "copyright": "Copyright (c) 2026 Bunnys Framelab",
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "files": [
+      "dist/**/*",
+      "package.json"
+    ],
+    "asar": true,
+    "compression": "normal",
+    "npmRebuild": false,
+    "nodeGypRebuild": false,
+    "buildDependenciesFromSource": false,
+    "extraMetadata": {
+      "main": "dist/main.cjs"
+    },
+    "electronFuses": {
+      "runAsNode": false,
+      "enableCookieEncryption": true,
+      "enableNodeOptionsEnvironmentVariable": false,
+      "enableNodeCliInspectArguments": false,
+      "enableEmbeddedAsarIntegrityValidation": true,
+      "onlyLoadAppFromAsar": true,
+      "loadBrowserProcessSpecificV8Snapshot": false,
+      "grantFileProtocolExtraPrivileges": false
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.ico",
+      "artifactName": "Manage-with-Bunny-Setup-${version}.${ext}",
+      "executableName": "Manage with Bunny"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": true,
+      "allowElevation": true,
+      "runAfterFinish": true,
+      "createDesktopShortcut": "always",
+      "createStartMenuShortcut": true,
+      "shortcutName": "Manage with Bunny",
+      "deleteAppDataOnUninstall": false,
+      "include": "build/installer.nsh",
+      "installerIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico"
+    },
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ],
+      "icon": "build/icon.png",
+      "category": "public.app-category.business",
+      "hardenedRuntime": false,
+      "gatekeeperAssess": false,
+      "artifactName": "Manage-with-Bunny-${version}-${arch}.${ext}",
+      "extendInfo": {
+        "NSLocalNetworkUsageDescription": "Manage with Bunny connects to your team host on this Wi-Fi network.",
+        "NSMicrophoneUsageDescription": "Manage with Bunny uses the microphone only while you record a voice message."
+      },
+      "identity": "-",
+      "minimumSystemVersion": "12.0"
+    },
+    "dmg": {
+      "title": "Manage with Bunny",
+      "contents": [
+        {
+          "x": 150,
+          "y": 190
+        },
+        {
+          "x": 390,
+          "y": 190,
+          "type": "link",
+          "path": "/Applications"
+        }
+      ]
+    }
+  }
+}

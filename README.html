@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Manage with Bunny - README</title>
+<meta name="description" content="How to install and use Manage with Bunny: private team chat, file transfer, tasks and performance tracking on your own Wi-Fi.">
+<link rel="icon" href="assets/logo.png">
+<style>
+@font-face { font-family: 'Inter'; src: url('assets/fonts/Inter-Medium.ttf') format('truetype'); font-weight: 400 600; font-display: swap; }
+@font-face { font-family: 'Inter'; src: url('assets/fonts/Inter-ExtraBold.ttf') format('truetype'); font-weight: 700 900; font-display: swap; }
+@font-face { font-family: 'JetBrains Mono'; src: url('assets/fonts/JetBrainsMono-Regular.ttf') format('truetype'); font-display: swap; }
+:root {
+  --blue: #1F6BFF; --orange: #FF8A00; --black: #08080A; --violet: #6A2BFF; --red: #FF1F56; --green: #2BD488;
+  --grad: linear-gradient(100deg, #1F6BFF 0%, #6A2BFF 30%, #FF1F56 65%, #FF8A00 100%);
+  --ink: #F4F3F1; --mute: rgba(244,243,241,.68); --dim: rgba(244,243,241,.46); --line: rgba(255,255,255,.09); --card: rgba(255,255,255,.035); --card2: rgba(255,255,255,.06);
+  --font: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif; --mono: 'JetBrains Mono', ui-monospace, Consolas, monospace;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: 80px; }
+body { margin: 0; background: var(--black); color: var(--ink); font-family: var(--font); font-size: 16px; line-height: 1.6; letter-spacing: -.012em; -webkit-font-smoothing: antialiased; }
+a { color: #8DB4FF; text-decoration: none; } a:hover { text-decoration: underline; }
+h1, h2, h3 { margin: 0; letter-spacing: -.045em; line-height: 1.05; font-weight: 800; }
+h2 { font-size: clamp(30px, 4vw, 46px); margin-bottom: 14px; }
+h3 { font-size: 20px; letter-spacing: -.03em; margin-bottom: 8px; }
+p { margin: 0 0 12px; color: var(--mute); }
+code, kbd { font-family: var(--mono); font-size: .86em; background: var(--card2); border: 1px solid var(--line); border-radius: 6px; padding: 1px 6px; color: var(--ink); }
+.gr { background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.mono { font-family: var(--mono); font-size: 12px; letter-spacing: .18em; text-transform: uppercase; color: var(--dim); }
+.wrap { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
+nav.top { position: sticky; top: 0; z-index: 10; background: rgba(8,8,10,.82); backdrop-filter: blur(12px); border-bottom: 1px solid var(--line); }
+nav.top .wrap { display: flex; align-items: center; gap: 22px; height: 64px; }
+nav.top .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; color: var(--ink); letter-spacing: -.03em; margin-right: auto; }
+nav.top .brand img { width: 30px; height: 30px; }
+nav.top a.l { color: var(--mute); font-size: 14px; font-weight: 600; }
+nav.top a.l:hover { color: var(--ink); text-decoration: none; }
+.hero { position: relative; overflow: hidden; padding: 110px 0 90px; text-align: center; }
+.hero .g1, .hero .g2 { position: absolute; border-radius: 50%; filter: blur(100px); opacity: .34; pointer-events: none; }
+.hero .g1 { width: 700px; height: 700px; left: -260px; top: -300px; background: var(--blue); }
+.hero .g2 { width: 640px; height: 640px; right: -240px; bottom: -320px; background: var(--orange); }
+.hero .dots { position: absolute; inset: 0; background-image: radial-gradient(rgba(255,255,255,.1) 1.2px, transparent 1.5px); background-size: 32px 32px; mask-image: radial-gradient(ellipse 60% 55% at 50% 45%, #000, transparent 80%); }
+.hero > .wrap { position: relative; }
+.hero img.logo { width: 120px; height: 120px; }
+.hero h1 { font-size: clamp(48px, 8vw, 104px); letter-spacing: -.06em; margin: 18px 0 16px; }
+.hero p.lead { font-size: clamp(17px, 1.6vw, 21px); max-width: 680px; margin: 0 auto 30px; }
+.btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+.btn { display: inline-flex; align-items: center; gap: 10px; height: 48px; padding: 0 22px; border-radius: 14px; font-weight: 700; color: #fff; border: 1px solid rgba(255,255,255,.18); background: var(--card2); }
+.btn:hover { text-decoration: none; background: rgba(255,255,255,.1); }
+.btn.primary { border: 0; background: var(--grad); box-shadow: 0 10px 40px -10px rgba(255,31,86,.6); }
+.btn small { font-weight: 500; opacity: .75; }
+section { padding: 80px 0; border-top: 1px solid var(--line); }
+.grid { display: grid; gap: 16px; }
+.g2 { grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); } .g3 { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 22px; }
+.card .ic { width: 42px; height: 42px; border-radius: 13px; background: var(--grad); display: grid; place-items: center; margin-bottom: 14px; font-weight: 800; }
+.card ul, .card ol { margin: 0; padding-left: 20px; color: var(--mute); } .card li { margin: 4px 0; }
+.steps { counter-reset: s; display: grid; gap: 14px; }
+.step { position: relative; padding: 20px 22px 20px 74px; background: var(--card); border: 1px solid var(--line); border-radius: 18px; }
+.step::before { counter-increment: s; content: counter(s); position: absolute; left: 20px; top: 20px; width: 38px; height: 38px; border-radius: 12px; background: var(--grad); display: grid; place-items: center; font-weight: 800; }
+.step p:last-child { margin-bottom: 0; }
+.note { display: flex; gap: 12px; padding: 16px 18px; border-radius: 16px; background: rgba(31,107,255,.08); border: 1px solid rgba(31,107,255,.3); color: #C4D6FF; margin: 16px 0; }
+.note.warn { background: rgba(255,138,0,.08); border-color: rgba(255,138,0,.35); color: #FFD3A0; }
+.note.bad { background: rgba(255,31,86,.08); border-color: rgba(255,31,86,.35); color: #FFC0CF; }
+.note b { color: #fff; }
+table { width: 100%; border-collapse: collapse; font-size: 14.5px; }
+th { text-align: left; color: var(--dim); font-weight: 600; font-size: 13px; padding: 10px 12px; border-bottom: 1px solid var(--line); }
+td { padding: 10px 12px; border-bottom: 1px solid var(--line); color: var(--mute); vertical-align: top; }
+td b { color: var(--ink); }
+.tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 16px; }
+.pill { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 12px; font-weight: 700; background: rgba(43,212,136,.12); color: var(--green); border: 1px solid rgba(43,212,136,.3); }
+details { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 14px 18px; margin-bottom: 10px; }
+details summary { cursor: pointer; font-weight: 700; color: var(--ink); }
+details p { margin: 10px 0 0; }
+pre { background: #0E0E12; border: 1px solid var(--line); border-radius: 14px; padding: 16px; overflow-x: auto; font-family: var(--mono); font-size: 13px; color: #DDE; }
+footer { padding: 50px 0 70px; border-top: 1px solid var(--line); text-align: center; color: var(--dim); font-size: 14px; }
+footer img { width: 54px; height: 54px; margin-bottom: 10px; }
+@media (max-width: 760px) { nav.top a.l { display: none; } .step { padding-left: 22px; padding-top: 70px; } }
+</style>
+</head>
+<body>
+<nav class="top"><div class="wrap">
+  <a class="brand" href="#top"><img src="assets/logo.png" alt=""><span>Manage with Bunny</span></a>
+  <a class="l" href="#download">Download</a><a class="l" href="#setup">Setup</a><a class="l" href="#use">Daily use</a><a class="l" href="#remote">Remote team</a><a class="l" href="#network">Network</a><a class="l" href="#security">Security</a><a class="l" href="UI.html">See the UI</a>
+</div></nav>
+
+<header class="hero" id="top">
+  <div class="g1"></div><div class="g2"></div><div class="dots"></div>
+  <div class="wrap">
+    <img class="logo" src="assets/logo.png" alt="Manage with Bunny logo">
+    <h1>Manage with <span class="gr">Bunny</span></h1>
+    <p class="lead">Private team chat, voice messages, big file transfer, task pipelines, team chart, records and monthly performance tracking. Everything runs on your own Wi-Fi and is stored on your own computer.</p>
+    <div class="btns">
+      <a class="btn primary" href="https://github.com/uday629/manage-with-bunny/releases/latest">Download for Windows <small>.exe</small></a>
+      <a class="btn" href="https://github.com/uday629/manage-with-bunny/releases/latest">Download for Mac <small>.dmg</small></a>
+      <a class="btn" href="UI.html">See the app</a>
+    </div>
+    <p style="margin-top:22px;font-size:14px">Version 1.2.0 · Made by <b style="color:#fff">Bunnys Framelab</b> · <a href="https://framelabmedia.odoo.com/">framelabmedia.odoo.com</a> · <a href="https://www.instagram.com/bunnysframelab/">@bunnysframelab</a></p>
+  </div>
+</header>
+
+<section id="what"><div class="wrap">
+  <span class="mono">What it is</span>
+  <h2>One place for your whole <span class="gr">team</span></h2>
+  <p style="max-width:760px">One computer in the office becomes the <b style="color:#fff">host</b>. Everyone else installs the app, joins with a code and is approved by the owner. Nothing goes to the internet or to any cloud: messages and files travel inside your Wi-Fi at full speed.</p>
+  <div class="grid g3" style="margin-top:26px">
+    <div class="card"><div class="ic">1</div><h3>Chat &amp; voice</h3><p>Direct messages (end-to-end encrypted), group chats, voice messages, replies, search, seen / not seen ticks, typing indicator.</p></div>
+    <div class="card"><div class="ic">2</div><h3>Files at Wi-Fi speed</h3><p>Send videos and huge files like a local-send app. Uploads resume after a drop, identical files are stored once, versions are kept.</p></div>
+    <div class="card"><div class="ic">3</div><h3>Task pipeline</h3><p>Owner to managers to team leaders to employees and back up: assign, delegate, submit with files, request changes, approve.</p></div>
+    <div class="card"><div class="ic">4</div><h3>Team chart</h3><p>A tree of who works under whom. Each person sees their own part; the owner sees everything.</p></div>
+    <div class="card"><div class="ic">5</div><h3>Records &amp; reports</h3><p>Private sheets for work handed out, hiring, expenses, leads. Export anything to Excel or PDF.</p></div>
+    <div class="card"><div class="ic">6</div><h3>Performance</h3><p>Monthly scores, on-time rate, overdue work, hours logged, 12-month history and manager reviews.</p></div>
+  </div>
+</div></section>
+
+<section id="download"><div class="wrap">
+  <span class="mono">Download &amp; install</span>
+  <h2>Install in <span class="gr">two clicks</span></h2>
+  <div class="grid g2">
+    <div class="card">
+      <h3>Windows 10 / 11</h3>
+      <ol>
+        <li>Download <code>Manage-with-Bunny-Setup-1.2.0.exe</code> from the <a href="https://github.com/uday629/manage-with-bunny/releases/latest">Releases page</a>.</li>
+        <li>Double-click it and press <b>Yes</b> on the Windows permission prompt. It installs, adds a desktop shortcut and opens.</li>
+        <li>If Windows shows <b>"Windows protected your PC"</b>: click <b>More info</b> then <b>Run anyway</b> (see <a href="#security">why</a>).</li>
+      </ol>
+    </div>
+    <div class="card">
+      <h3>macOS 12+ (Intel and Apple Silicon)</h3>
+      <ol>
+        <li>Download the <code>.dmg</code> for your Mac: <code>arm64</code> for M1/M2/M3/M4, <code>x64</code> for Intel.</li>
+        <li>Open it and drag <b>Manage with Bunny</b> into <b>Applications</b>.</li>
+        <li>The first time: right-click the app, choose <b>Open</b>, then <b>Open</b> again (the app is not yet notarized by Apple). If macOS still refuses, open System Settings, Privacy &amp; Security, and click <b>Open Anyway</b>.</li>
+        <li>Allow <b>Local Network</b> access when asked, and the microphone if you want voice messages.</li>
+      </ol>
+    </div>
+  </div>
+</div></section>
+
+<section id="setup"><div class="wrap">
+  <span class="mono">First-time setup</span>
+  <h2>Set up your <span class="gr">workspace</span></h2>
+  <div class="steps">
+    <div class="step"><h3>Pick the host computer</h3><p>Use the owner's PC or any computer that stays on during work hours, connected to the office Wi-Fi or by cable. All messages and files are stored on it, so pick one with a big drive.</p></div>
+    <div class="step"><h3>Host a workspace</h3><p>On that computer open the app and choose <b>Host a workspace</b>. Enter the workspace name, your name, a username, a strong password, and choose the storage folder (a drive other than C: is suggested automatically).</p></div>
+    <div class="step"><h3>Invite your team</h3><p>The Home screen shows the <b>join code</b>. Press <b>Copy invite</b>: it copies the code <i>and</i> the host's address, so joining works even on networks that block discovery. Send it to your teammates.</p></div>
+    <div class="step"><h3>Teammates join</h3><p>Each person installs the app, chooses <b>Join a team</b>, pastes the invite and creates their own username and password. The app verifies the host's identity before sending anything.</p></div>
+    <div class="step"><h3>Approve and set roles</h3><p>A badge appears on <b>Admin</b>. Approve each request, pick their role (Manager, HR, Team Leader, Employee or your own custom positions) and who they report to. That builds the team chart.</p></div>
+  </div>
+  <div class="note warn"><b>Keep your password safe.</b>&nbsp;Private messages are encrypted with it. If someone forgets theirs, an admin can create a one-time reset code (Admin, Members, Manage, Reset password), but older private messages cannot be recovered. That is what keeps them private.</div>
+</div></section>
+
+<section id="use"><div class="wrap">
+  <span class="mono">Daily use</span>
+  <h2>How the team <span class="gr">works</span> with it</h2>
+  <div class="grid g2">
+    <div class="card"><h3>Chat</h3><ul>
+      <li><b>New</b> starts a direct message or a group. Employees can message their manager, teammates and people under them; managers and the owner can message anyone.</li>
+      <li>Click the <b>microphone</b> to record a voice message (up to 10 minutes), then <b>Send voice</b>.</li>
+      <li>Drag files into a chat, paste screenshots, or use the paper clip. Large videos stream right inside the chat.</li>
+      <li>One grey tick = sent, two blue ticks = seen. Under your last message you see <i>Seen</i>, <i>Seen by ...</i> or <i>Not seen yet</i>.</li>
+      <li>The search box finds chats <i>and</i> messages (Bengali and English). Click a result to jump to it.</li>
+    </ul></div>
+    <div class="card"><h3>Tasks</h3><ul>
+      <li><b>New task</b>: title, details, links, due date, priority, and who it is for (yourself or anyone under you).</li>
+      <li>The person clicks <b>Start</b>, works, attaches the result and <b>Submit for review</b>.</li>
+      <li>The person who assigned it <b>Approves</b> or <b>Requests changes</b> with a note. Every step is recorded.</li>
+      <li><b>Delegate</b> splits a task and passes parts further down the chain (e.g. manager to team leader to editor).</li>
+      <li>Filter by month to see any month's work; export the board to Excel or PDF.</li>
+    </ul></div>
+    <div class="card"><h3>Files</h3><ul>
+      <li>Everything shared in your chats and tasks, with search and filters for videos, images and documents.</li>
+      <li>Uploading a file with the same name again creates a new <b>version</b>; older versions stay available.</li>
+      <li>Admins see duplicates, old versions and storage use, and can clean up in one click.</li>
+    </ul></div>
+    <div class="card"><h3>Records, Performance, Reports</h3><ul>
+      <li><b>Records</b>: private sheets (who got which work, hiring, expenses, leads). Only you and people you share with can see them.</li>
+      <li><b>Performance</b>: monthly score per person, hours logged, reviews. Managers rate their team each month.</li>
+      <li><b>Excel</b> and <b>PDF</b> buttons on tasks, records, performance, work logs and the security log.</li>
+    </ul></div>
+  </div>
+</div></section>
+
+<section id="remote"><div class="wrap">
+  <span class="mono">People who work from home</span>
+  <h2>Remote <span class="gr">teammates</span></h2>
+  <p style="max-width:760px">Some people cannot be on the office Wi-Fi. Give them a <b style="color:#fff">remote profile</b> so their work still lives with the rest of the team's data.</p>
+  <div class="steps">
+    <div class="step"><h3>Create the profile</h3><p>Admin, Members, <b>Add remote profile</b>: name, title, role, who they report to, and a <b>caretaker</b> (usually their team leader). The profile has no login.</p></div>
+    <div class="step"><h3>Keep it updated</h3><p>Assign tasks to them as usual. The caretaker sees "Start for Sara" and "Submit for Sara" and adds daily updates (hours, what was done, links) from the Home screen. History always shows who did it on whose behalf.</p></div>
+    <div class="step"><h3>When they come to the office</h3><p>Admin, Manage, <b>Activate login</b> gives a one-time code. On their computer: Join a team, paste the invite, <b>I already have an account</b>, then <b>Use a reset code</b>. They keep all their history.</p></div>
+  </div>
+</div></section>
+
+<section id="network"><div class="wrap">
+  <span class="mono">Network</span>
+  <h2>Staying <span class="gr">connected</span></h2>
+  <div class="grid g2">
+    <div class="card"><h3>What the app does by itself</h3><ul>
+      <li>Finds the host with network announcements (broadcast and multicast), then by scanning the local network, then by the remembered addresses.</li>
+      <li>Reconnects automatically after Wi-Fi drops, sleep, a host restart or an IP address change.</li>
+      <li>Messages written while offline are sent when the connection returns. Uploads resume where they stopped.</li>
+      <li>The installer allows the app through Windows Firewall <b>for devices on the same local network only</b>, on Private and Public Wi-Fi alike.</li>
+    </ul></div>
+    <div class="card"><h3>If someone cannot connect</h3><ol>
+      <li>Open <b>Settings, Network check</b> (or <b>Check network</b> on the yellow bar). It explains the problem and can repair the firewall rule in one click.</li>
+      <li>Make sure both computers use the <b>same, main</b> Wi-Fi. Guest networks usually have <b>AP / client isolation</b> on, which blocks devices from seeing each other. No app can get around that; use the main network or turn isolation off in the router.</li>
+      <li>Paste the full invite (code + address) when joining.</li>
+      <li>Tip: reserve the host's IP address in the router (DHCP reservation).</li>
+    </ol></div>
+  </div>
+</div></section>
+
+<section id="security"><div class="wrap">
+  <span class="mono">Security</span>
+  <h2>Private <span class="gr">by design</span></h2>
+  <div class="grid g3">
+    <div class="card"><h3>Only your Wi-Fi</h3><p>No cloud, no internet server. Joining needs the code and the owner's approval. All traffic is encrypted (TLS 1.3) and the app verifies the host's identity.</p></div>
+    <div class="card"><h3>Private chats stay private</h3><p>Direct messages are end-to-end encrypted. The host stores only scrambled data; not even the owner can read them. Passwords never leave your computer.</p></div>
+    <div class="card"><h3>Everyone sees only their part</h3><p>Every action is checked on the host. Employees cannot open other people's chats, tasks, records or files, or give themselves more power.</p></div>
+  </div>
+  <div class="note bad"><b>Turn on BitLocker on the host computer.</b>&nbsp;Group chats, tasks, records and files are protected inside the app, but on the host's disk they are not encrypted. Anyone who can log in to that PC or take its drive could read them. On Windows: Settings, Privacy &amp; security, Device encryption (or Control Panel, BitLocker Drive Encryption) and turn it on for the drive with the storage folder. On a Mac host: System Settings, Privacy &amp; Security, FileVault.</div>
+  <div class="note warn"><b>"Windows protected your PC" / "unidentified developer".</b>&nbsp;The installers are not code-signed yet. A code-signing certificate (Windows) and an Apple Developer ID (Mac) cost money every year. Until they are added, Windows SmartScreen and macOS Gatekeeper show a warning the first time; use <i>More info, Run anyway</i> on Windows and <i>right-click, Open</i> on Mac. Only download the app from the official Releases page.</div>
+  <h3 style="margin-top:28px">Tests that were actually run</h3>
+  <div class="tablewrap"><table>
+    <tr><th>Test</th><th>Result</th></tr>
+    <tr><td>API and security tests against a real host</td><td><span class="pill">132 / 132 passed</span></td></tr>
+    <tr><td>Internal penetration test (56 attacks: auth bypass, IDOR, traversal, smuggling, TLS downgrade, races...)</td><td><span class="pill">56 / 56 blocked</span></td></tr>
+    <tr><td>UI end-to-end with two real apps (setup, join, chat, voice, search, seen, files, tasks, remote, export, network check, restarts)</td><td><span class="pill">46 / 46 passed</span></td></tr>
+    <tr><td>15 people at once for 60 s plus five 40 MB uploads</td><td><span class="pill">0 errors, every message delivered, median 1 ms</span></td></tr>
+    <tr><td>12 months of data: 300,000 messages, 25,000 tasks, 20,000 files</td><td><span class="pill">every screen under 200 ms</span></td></tr>
+    <tr><td>Real 2.9 GiB AI model file sent through the app</td><td><span class="pill">122 MB/s up, 306 MB/s down, byte-identical</span></td></tr>
+    <tr><td>Semgrep code scan, secret scan, dependency audit</td><td><span class="pill">no open issues in shipped code</span></td></tr>
+  </table></div>
+  <p style="margin-top:12px;font-size:14px">Full details: <a href="SECURITY_REPORT.md">SECURITY_REPORT.md</a>. These are internal tests; no external company has audited the app yet.</p>
+</div></section>
+
+<section id="faq"><div class="wrap">
+  <span class="mono">FAQ</span>
+  <h2>Questions</h2>
+  <details><summary>What happens if the host computer is off?</summary><p>Nobody can send or receive until it is back. Turn it on and everyone reconnects by themselves; nothing is lost. The host makes a database backup every day (Admin, Storage, Backups).</p></details>
+  <details><summary>How many people can use it?</summary><p>It was tested with 15 people chatting, sending files and working on tasks at the same time with zero errors, and with a year of data (300,000 messages, 25,000 tasks). Small and medium teams are comfortable.</p></details>
+  <details><summary>How fast are file transfers?</summary><p>As fast as your Wi-Fi: on a typical Wi-Fi 5/6 network a 1 GB file takes roughly 20-60 seconds. On cable it is faster. The app itself was measured far above Wi-Fi speed, so the network is the limit.</p></details>
+  <details><summary>The app asked me to sign in again.</summary><p>That happens only if the computer lost power right after the very first sign-in, or after a password reset. Just enter your password; your username is already filled in and you stay signed in after that.</p></details>
+  <details><summary>Can I move the data to a bigger drive?</summary><p>Yes: Admin, Storage, Move to another drive (on the host computer). Everyone stays connected.</p></details>
+  <details><summary>Can I move the host to another computer?</summary><p>Copy the whole storage folder to the new computer, install the app there and choose Host a workspace, Open existing data folder. Members reconnect automatically.</p></details>
+</div></section>
+
+<section id="dev"><div class="wrap">
+  <span class="mono">For developers</span>
+  <h2>Build from source</h2>
+<pre>npm install
+npm start                  # run in development
+npm run typecheck
+npm run test:server        # API + security tests
+npm run dist:win           # Windows installer (on Windows)
+npm run dist:mac           # Mac DMGs (on a Mac, or via GitHub Actions)</pre>
+  <p>Electron, React, TypeScript and SQLite (built into Node, no native modules). The GitHub Actions workflow builds Windows and Mac installers on every version tag.</p>
+</div></section>
+
+<footer><div class="wrap">
+  <img src="assets/logo.png" alt=""><br>
+  Manage with Bunny · Made by <b style="color:#fff">Bunnys Framelab</b><br>
+  <a href="https://framelabmedia.odoo.com/">framelabmedia.odoo.com</a> · <a href="https://www.instagram.com/bunnysframelab/">Instagram @bunnysframelab</a>
+</div></footer>
+</body>
+</html>
