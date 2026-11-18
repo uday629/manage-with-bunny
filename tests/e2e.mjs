@@ -289,6 +289,28 @@ try {
   const perfRow = await host.eval(`const r=[...document.querySelectorAll('table.t tbody tr')].find(x=>x.innerText.includes('Sara Remote')); return r ? r.innerText.replace(/\s+/g,' ') : ''`);
   ok(/Sara Remote/.test(perfRow) && /7\s*h/.test(perfRow), 'remote work counted in performance (' + perfRow + ')');
 
+  // Profile photo: choose, position, save
+  await host.eval(`document.querySelector('.me-btn').click(); return true;`);
+  await host.waitFor(`[...document.querySelectorAll('button')].some(b=>b.textContent.includes('Add a photo'))`);
+  await host.click('Add a photo');
+  await host.waitFor(`document.querySelector('.modal input[type=file]')`);
+  { const d = await host.send('DOM.getDocument', { depth: -1 }); const q = await host.send('DOM.querySelector', { nodeId: d.result.root.nodeId, selector: '.modal input[type=file]' });
+    await host.send('DOM.setFileInputFiles', { nodeId: q.result.nodeId, files: [path.join(root, 'assets', 'logo.png')] }); }
+  ok(await host.waitFor(`document.querySelector('.photo-stage img')`, 8000), 'photo editor shows the chosen image');
+  await host.eval(`const r=document.querySelector('.modal input[type=range]'); Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(r,'1.4'); r.dispatchEvent(new Event('input',{bubbles:true})); return true;`);
+  await sleep(300); await host.shot('31-photo', 'photo');
+  await host.eval(`[...document.querySelectorAll('.modal-foot button')].find(b=>b.textContent.includes('Save photo')).click(); return true;`);
+  ok(await host.waitFor(`document.querySelector('.me-btn .avatar-img')`, 10000), 'profile photo saved and shown in the sidebar');
+  ok(await mem.waitFor(`document.querySelector('.avatar-img')`, 15000), 'teammate sees the new photo in realtime');
+  // Work report
+  await host.nav('Work report');
+  await host.click('30 days', '.tab');
+  ok(await host.waitFor(`document.querySelector('.report tbody') && document.querySelector('.report tbody').innerText.includes('Edit XYZ client reel')`, 10000), 'work report lists tasks in the period');
+  ok(await host.eval(`return document.querySelector('.report tbody').innerText.includes('Daily update')`), 'work report includes daily updates');
+  await sleep(400); await host.shot('32-report', 'report');
+  await host.click('Excel', '.page-head button');
+  ok(await host.waitFor(`true`) && await (async () => { for (let i = 0; i < 40; i++) { if (fs.readdirSync(path.join(tmp, 'exports')).some((f) => f.startsWith('Work report'))) return true; await sleep(250); } return false; })(), 'work report exports to Excel');
+
   // Resilience: kill the member app, restart it, it must reconnect to the same workspace by itself.
   procs[1].kill(); await sleep(1500);
   procs[1] = launch('member', 9335);

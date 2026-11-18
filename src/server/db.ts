@@ -109,6 +109,16 @@ const MIGRATIONS: string[] = [
    CREATE INDEX tasks_status ON tasks(status, assignee_id);
    CREATE INDEX messages_sender ON messages(conv_id, sender_id, id);
    CREATE INDEX files_uploader ON files(uploader_id);`,
+  // v4: profile photos (separate table so user lists stay small), client / hours / quality rating for the work report
+  `CREATE TABLE avatars(user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE, data BLOB NOT NULL, mime TEXT NOT NULL, updated_at INTEGER NOT NULL);
+   ALTER TABLE users ADD COLUMN avatar_ver INTEGER NOT NULL DEFAULT 0;
+   ALTER TABLE tasks ADD COLUMN client TEXT NOT NULL DEFAULT '';
+   ALTER TABLE tasks ADD COLUMN hours_spent REAL;
+   ALTER TABLE tasks ADD COLUMN rating INTEGER;
+   ALTER TABLE worklog ADD COLUMN client TEXT NOT NULL DEFAULT '';
+   CREATE INDEX tasks_client ON tasks(client);
+   CREATE INDEX tasks_done_at ON tasks(completed_at);
+   CREATE INDEX worklog_day ON worklog(day);`,
 ];
 
 function migrate(db: Db) {

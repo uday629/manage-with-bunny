@@ -23,5 +23,6 @@ for (const f of fs.readdirSync('assets/fonts')) if (f.endsWith('.ttf')) fs.copyF
 fs.copyFileSync('assets/logo.png', `${out}/renderer/logo.png`);
 fs.copyFileSync('assets/logo.png', `${out}/logo.png`);
 fs.copyFileSync('build/tray.png', `${out}/tray.png`);
+fs.copyFileSync('build/icon.ico', `${out}/icon.ico`);
 fs.copyFileSync('build/tray@2x.png', `${out}/tray@2x.png`);
 console.log(`built ${dev ? 'dev' : 'prod'} bundle`);

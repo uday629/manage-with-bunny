@@ -4,12 +4,12 @@ import { useSyncExternalStore } from 'react';
 import type { Perm } from '../shared/perms';
 
 // ------------------------------------------------------------------ types
-export interface User { id: string; username: string; displayName: string; title: string; roleId: string | null; managerId: string | null; status: string; isOwner: boolean; color: string; pubkey: string; online: boolean; lastSeen: number | null; reports?: number; isRemote?: boolean; caretakerId?: string | null; remoteNote?: string }
+export interface User { id: string; username: string; displayName: string; title: string; roleId: string | null; managerId: string | null; status: string; isOwner: boolean; color: string; pubkey: string; online: boolean; lastSeen: number | null; reports?: number; avatarVer?: number; isRemote?: boolean; caretakerId?: string | null; remoteNote?: string }
 export interface Role { id: string; name: string; rank: number; color: string; perms: Perm[]; isOwner: boolean; members?: number }
 export interface FileInfo { id: string; name: string; size: number; mime: string; version: number; versions?: number; ext?: string; uploaderId?: string; scope?: string; scopeId?: string; groupId?: string; createdAt?: number; sha?: string }
 export interface Msg { id: number; convId: string; senderId: string | null; kind: 'text' | 'file' | 'system'; body: string; e2e: boolean; replyTo: number | null; clientId: string | null; createdAt: number; editedAt: number | null; deleted: boolean; file: FileInfo | null; plain?: string | null; pending?: 'sending' | 'failed'; localFile?: string }
 export interface Conv { id: string; type: 'dm' | 'group'; name: string; createdBy: string; lastMsgAt: number; unread: number; muted: boolean; isAdmin: boolean; lastReadId: number; members: string[]; last: Msg | null }
-export interface Task { id: string; title: string; description: string; links: string[]; assignerId: string | null; assigneeId: string | null; parentId: string | null; status: string; priority: string; dueAt: number | null; createdAt: number; updatedAt: number; startedAt: number | null; submittedAt: number | null; completedAt: number | null; revisions: number; subtasks: number; files: number }
+export interface Task { client?: string; hoursSpent?: number | null; rating?: number | null; id: string; title: string; description: string; links: string[]; assignerId: string | null; assigneeId: string | null; parentId: string | null; status: string; priority: string; dueAt: number | null; createdAt: number; updatedAt: number; startedAt: number | null; submittedAt: number | null; completedAt: number | null; revisions: number; subtasks: number; files: number }
 export interface Me { user: User; perms: Perm[]; workspace: { id: string; name: string }; roles: Role[] }
 export interface Upload { id: string; name: string; size: number; sent: number; status: 'queued' | 'uploading' | 'paused' | 'done' | 'error'; error?: string; speed: number; scopeId: string }
 export interface Toast { id: number; kind: 'ok' | 'err' | 'info'; text: string }
@@ -26,13 +26,13 @@ export const bunny = (window as any).bunny as Record<string, BridgeFn> & { onEve
 export interface Store {
   app: AppState | null; conn: 'online' | 'connecting' | 'offline'; me: Me | null; users: Record<string, User>;
   convs: Conv[]; msgs: Record<string, Msg[]>; typing: Record<string, { userId: string; until: number }>; pending: number;
-  uploads: Upload[]; toasts: Toast[]; ver: { tasks: number; sheets: number; users: number; files: number; worklog: number }; route: string; routeArg: string | null;
+  uploads: Upload[]; toasts: Toast[]; ver: { tasks: number; sheets: number; users: number; files: number; worklog: number; avatars: number }; route: string; routeArg: string | null;
   downloads: Record<string, { received: number; total: number; state: string }>;
   jump: { convId: string; msgId: number } | null;
 }
 let state: Store = {
   app: null, conn: 'connecting', me: null, users: {}, convs: [], msgs: {}, typing: {}, pending: 0, uploads: [], toasts: [],
-  ver: { tasks: 0, sheets: 0, users: 0, files: 0, worklog: 0 }, route: 'home', routeArg: null, downloads: {}, jump: null,
+  ver: { tasks: 0, sheets: 0, users: 0, files: 0, worklog: 0, avatars: 0 }, route: 'home', routeArg: null, downloads: {}, jump: null,
 };
 const subs = new Set<() => void>();
 export const getState = () => state;
@@ -322,6 +322,25 @@ export function addMessage(m: Msg) {
     const convs = s.convs.map((c) => (c.id === m.convId ? { ...c, last: m, lastMsgAt: m.createdAt } : c)).sort((a, b) => b.lastMsgAt - a.lastMsgAt);
     return { msgs: { ...s.msgs, [m.convId]: list }, convs };
   });
+}
+
+// ------------------------------------------------------------------ profile photos (fetched with the session token, kept as blob URLs)
+const avatarCache = new Map<string, string>();
+const avatarLoading = new Set<string>();
+export function avatarSrc(id: string, ver: number | undefined): string | null {
+  if (!ver) return null;
+  const key = `${id}:${ver}`;
+  const hit = avatarCache.get(key);
+  if (hit) return hit;
+  if (!avatarLoading.has(key) && base && token) {
+    avatarLoading.add(key);
+    fetch(`${base}/api/users/${id}/avatar?v=${ver}`, { headers: { Authorization: 'Bearer ' + token } })
+      .then((r) => (r.ok ? r.blob() : null))
+      .then((b) => { if (b) { for (const [k, u] of avatarCache) if (k.startsWith(id + ':')) { URL.revokeObjectURL(u); avatarCache.delete(k); } avatarCache.set(key, URL.createObjectURL(b)); bump('avatars'); } })
+      .catch(() => {})
+      .finally(() => avatarLoading.delete(key));
+  }
+  return null;
 }
 
 // ------------------------------------------------------------------ files

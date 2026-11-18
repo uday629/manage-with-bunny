@@ -1,8 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { api, useStore, navigate, uploadFiles, fmtDate, fmtDateTime, fmtBytes, userName, can, toast, monthNow, monthLabel, shiftMonth, bunny, type Task, type FileInfo, type User } from '../api';
-import { Avatar, Btn, ErrorBox, ExportButtons, Field, Icon, Modal, Spinner, RichText, Tabs, confirmDialog, useAsync, Progress } from '../ui';
+import { Avatar, Btn, ErrorBox, ExportButtons, Stars, Field, Icon, Modal, Spinner, RichText, Tabs, confirmDialog, useAsync, Progress } from '../ui';
 import { Attachment } from './Chat';
 
+// Client names already used, for the task form's suggestions.
+let clientsSeen: string[] = [];
+export const knownClients = () => clientsSeen;
 export const STATUS: Record<string, { label: string; color: string }> = {
   todo: { label: 'To do', color: '#8B8B95' },
   in_progress: { label: 'In progress', color: '#1F6BFF' },
@@ -36,6 +39,7 @@ export function Tasks() {
   const { data, error, loading, reload } = useAsync(() => api<Task[]>('GET', `/api/tasks?view=${view}${month ? '&month=' + month : ''}`), [view, month, ver]);
   useEffect(() => { if (arg === 'new') { setCreating({}); navigate('tasks'); } }, [arg]);
   const openId = arg && arg !== 'new' ? arg : null;
+  if (data) clientsSeen = [...new Set([...clientsSeen, ...data.map((t) => t.client || '').filter(Boolean)])].sort();
   const filtered = (data || []).filter((t) => !q || t.title.toLowerCase().includes(q.toLowerCase()) || userName(t.assigneeId).toLowerCase().includes(q.toLowerCase()));
   return (
     <div className="page">
@@ -57,8 +61,8 @@ export function Tasks() {
         </div>
         <div className="search-box grow" style={{ maxWidth: 300 }}><Icon name="search" size={15} /><input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search tasks or people" /></div>
         <ExportButtons disabled={!data} table={() => ({ title: `Tasks - ${({ mine: 'Assigned to me', assigned: 'Assigned by me', team: 'My team', all: 'Everything' } as Record<string, string>)[view]}${month ? ' - ' + monthLabel(month) : ''}`,
-          columns: ['Title', 'Assigned to', 'Assigned by', 'Status', 'Priority', 'Due', 'Created', 'Completed', 'Revisions', 'Files', 'Subtasks', 'Details'],
-          rows: filtered.map((t) => [t.title, userName(t.assigneeId), userName(t.assignerId), STATUS[t.status]?.label || t.status, t.priority, t.dueAt ? fmtDateTime(t.dueAt) : '', fmtDateTime(t.createdAt), t.completedAt ? fmtDateTime(t.completedAt) : '', t.revisions, t.files, t.subtasks, t.description]) })} />
+          columns: ['Title', 'Client', 'Assigned to', 'Assigned by', 'Status', 'Priority', 'Due', 'Created', 'Completed', 'Revisions', 'Files', 'Subtasks', 'Details'],
+          rows: filtered.map((t) => [t.title, t.client || '', userName(t.assigneeId), userName(t.assignerId), STATUS[t.status]?.label || t.status, t.priority, t.dueAt ? fmtDateTime(t.dueAt) : '', fmtDateTime(t.createdAt), t.completedAt ? fmtDateTime(t.completedAt) : '', t.revisions, t.files, t.subtasks, t.description]) })} />
       </div>
       {error && <ErrorBox text={error} retry={reload} />}
       {loading && !data ? <Spinner /> : (
@@ -118,11 +122,12 @@ function TaskForm({ initial, task, onClose, onSaved }: { initial?: { parentId?: 
   const [due, setDue] = useState(toLocalInput(task?.dueAt ?? null));
   const [prio, setPrio] = useState(task?.priority || 'normal');
   const [links, setLinks] = useState((task?.links || []).join('\n'));
+  const [client, setClient] = useState(task?.client || '');
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const save = async () => {
     setBusy(true); setErr(null);
-    const body = { title, description: desc, assigneeId: assignee, dueAt: due ? new Date(due).getTime() : null, priority: prio, links: links.split(/\s+/).filter(Boolean), parentId: initial?.parentId };
+    const body = { title, client, description: desc, assigneeId: assignee, dueAt: due ? new Date(due).getTime() : null, priority: prio, links: links.split(/\s+/).filter(Boolean), parentId: initial?.parentId };
     try {
       const t = task ? await api<Task>('PATCH', `/api/tasks/${task.id}`, body) : await api<Task>('POST', '/api/tasks', body);
       toast(task ? 'Task updated' : 'Task assigned', 'ok');
@@ -140,6 +145,10 @@ function TaskForm({ initial, task, onClose, onSaved }: { initial?: { parentId?: 
             {people.map((u) => <option key={u.id} value={u.id}>{u.id === me ? `${u.displayName} (me)` : u.displayName}{u.isRemote ? ' (remote)' : ''}{u.title ? ` - ${u.title}` : ''}</option>)}
           </select>
         </Field>
+        <Field label="Client (optional)"><input value={client} onChange={(e) => setClient(e.target.value)} maxLength={80} placeholder="e.g. XYZ Fashion" list="mwb-clients" />
+          <datalist id="mwb-clients">{knownClients().map((c) => <option key={c} value={c} />)}</datalist></Field>
+      </div>
+      <div className="form-row">
         <Field label="Priority"><select value={prio} onChange={(e) => setPrio(e.target.value)}>{PRIOS.map((p) => <option key={p} value={p}>{p[0].toUpperCase() + p.slice(1)}</option>)}</select></Field>
       </div>
       <div className="form-row">
@@ -163,6 +172,8 @@ function TaskDrawer({ id, onClose, onSubtask, onChanged }: { id: string; onClose
   const allUploads = useStore((s) => s.uploads);
   const uploads = useMemo(() => allUploads.filter((u) => u.scopeId === id), [allUploads, id]);
   const [note, setNote] = useState('');
+  const [hours, setHours] = useState('');
+  const [rating, setRating] = useState(0);
   const [attached, setAttached] = useState<FileInfo[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
@@ -171,7 +182,8 @@ function TaskDrawer({ id, onClose, onSubtask, onChanged }: { id: string; onClose
     if (action === 'cancel' && !(await confirmDialog({ title: 'Cancel this task?', text: 'It stays in history but is closed.', ok: 'Cancel task', danger: true }))) return;
     setBusy(action);
     try {
-      await api('POST', `/api/tasks/${id}/action`, { action, note, fileIds: attached.map((f) => f.id) });
+      await api('POST', `/api/tasks/${id}/action`, { action, note, fileIds: attached.map((f) => f.id), hours: action === 'submit' && hours !== '' ? Number(hours) : undefined, rating: action === 'approve' && rating ? rating : undefined });
+      setHours(''); setRating(0);
       setNote(''); setAttached([]); reload(); files.reload(); onChanged();
     } catch (e) { toast((e as Error).message, 'err'); } finally { setBusy(null); }
   };
@@ -204,6 +216,9 @@ function TaskDrawer({ id, onClose, onSubtask, onChanged }: { id: string; onClose
             <dl className="kv">
               <dt>Assigned to</dt><dd className="row" style={{ gap: 8 }}><Avatar user={users[t.assigneeId || '']} size={22} />{userName(t.assigneeId)}</dd>
               <dt>Assigned by</dt><dd className="row" style={{ gap: 8 }}><Avatar user={users[t.assignerId || '']} size={22} />{userName(t.assignerId)}</dd>
+              {t.client && <><dt>Client</dt><dd>{t.client}</dd></>}
+              {t.hoursSpent != null && <><dt>Hours spent</dt><dd>{t.hoursSpent} h</dd></>}
+              {t.rating ? <><dt>Quality</dt><dd><Stars value={t.rating} size={14} /></dd></> : null}
               <dt>Priority</dt><dd><span className={'prio ' + t.priority}>{t.priority}</span></dd>
               <dt>Due</dt><dd>{t.dueAt ? <span className={t.dueAt < Date.now() && !['done', 'cancelled'].includes(t.status) ? 'late' : ''} style={{ color: t.dueAt < Date.now() && !['done', 'cancelled'].includes(t.status) ? '#FF6B8E' : undefined }}>{fmtDateTime(t.dueAt)}</span> : <span className="dim">No deadline</span>}</dd>
               <dt>Created</dt><dd>{fmtDateTime(t.createdAt)}</dd>
@@ -264,9 +279,11 @@ function TaskDrawer({ id, onClose, onSubtask, onChanged }: { id: string; onClose
               <div className="row wrap" style={{ justifyContent: 'flex-end' }}>
                 <Btn small loading={busy === 'comment'} disabled={!note.trim() && !attached.length} onClick={() => act('comment')}>Comment</Btn>
                 {isAssignee && ['todo', 'changes'].includes(t.status) && <Btn small icon="play" loading={busy === 'start'} onClick={() => act('start')}>{'Start' + forWhom}</Btn>}
+                {isAssignee && ['todo', 'in_progress', 'changes'].includes(t.status) && <label className="row" style={{ gap: 6, fontSize: 12.5 }} title="How long the work took (shown in the work report)"><span className="dim">Hours spent</span><input type="number" min={0} max={2000} step={0.25} value={hours} onChange={(e) => setHours(e.target.value)} style={{ width: 80, padding: '5px 8px' }} /></label>}
                 {isAssignee && ['todo', 'in_progress', 'changes'].includes(t.status) && <Btn small kind="primary" icon="send" loading={busy === 'submit'} onClick={() => act('submit')}>{(t.assignerId === me ? 'Mark done' : 'Submit for review') + forWhom}</Btn>}
                 {data.canDecide && t.status === 'submitted' && <>
                   <Btn small kind="danger" loading={busy === 'request_changes'} disabled={!note.trim()} title={!note.trim() ? 'Write what needs to change' : ''} onClick={() => act('request_changes')}>Request changes</Btn>
+                  <span className="row" style={{ gap: 6, fontSize: 12.5 }} title="Quality of the work (optional, shown in the work report)"><span className="dim">Quality</span><Stars value={rating} onChange={setRating} size={16} /></span>
                   <Btn small kind="primary" icon="check" loading={busy === 'approve'} onClick={() => act('approve')}>Approve</Btn>
                 </>}
                 {data.canDecide && !['done', 'cancelled'].includes(t.status) && <Btn small kind="soft" loading={busy === 'cancel'} onClick={() => act('cancel')}>Cancel task</Btn>}

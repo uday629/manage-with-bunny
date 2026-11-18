@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { api, useStore, navigate, loadConvs, can, toast, fmtAgo, type User } from '../api';
 import { Avatar, Btn, Empty, ErrorBox, Icon, Modal, Spinner, useAsync } from '../ui';
 import { WorkLog } from './WorkLog';
+import { PhotoEditor } from './Photo';
 
 interface Node extends User { reports: number; children: Node[] }
 
@@ -65,6 +66,8 @@ export function Profile({ user, onClose }: { user: User; onClose: () => void }) 
   const r = me.roles.find((x) => x.id === user.roleId);
   const reports = Object.values(users).filter((u) => u.managerId === user.id);
   const [busy, setBusy] = useState(false);
+  const [photo, setPhoto] = useState(false);
+  const canPhoto = user.id === me.user.id || (!!user.isRemote && (user.caretakerId === me.user.id || me.perms.includes('users.manage')));
   const dm = async () => {
     setBusy(true);
     try { const c = await api<{ id: string }>('POST', '/api/convs/dm', { userId: user.id }); await loadConvs(); navigate('chat', c.id); onClose(); }
@@ -74,9 +77,11 @@ export function Profile({ user, onClose }: { user: User; onClose: () => void }) 
     <Modal title="Profile" onClose={onClose} wide={!!user.isRemote}>
       <div className="row" style={{ gap: 14 }}>
         <Avatar user={user} size={60} ring />
+        {photo && <PhotoEditor user={user} onClose={() => setPhoto(false)} />}
         <div className="grow">
           <h2>{user.displayName}</h2>
           <p className="muted">{user.title || r?.name} · @{user.username}</p>
+          {canPhoto && <Btn small kind="soft" icon="image" onClick={() => setPhoto(true)}>{user.avatarVer ? 'Change photo' : 'Add photo'}</Btn>}
           <p className="dim" style={{ fontSize: 12 }}>{user.isRemote ? 'Works remotely · profile kept up to date by a caretaker' : user.online ? 'Online now' : user.lastSeen ? `Last seen ${fmtAgo(user.lastSeen)}` : 'Offline'}</p>
         </div>
       </div>

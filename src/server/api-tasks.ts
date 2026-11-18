@@ -11,6 +11,7 @@ function taskOut(t: any) {
   try { links = JSON.parse(t.links); } catch { /* */ }
   return {
     id: t.id, title: t.title, description: t.description, links, assignerId: t.assigner_id, assigneeId: t.assignee_id, parentId: t.parent_id,
+    client: t.client || '', hoursSpent: t.hours_spent ?? null, rating: t.rating ?? null,
     status: t.status, priority: t.priority, dueAt: t.due_at, createdAt: t.created_at, updatedAt: t.updated_at, startedAt: t.started_at,
     submittedAt: t.submitted_at, completedAt: t.completed_at, revisions: t.revisions,
     subtasks: t.sub_n ?? S.db.get<{ n: number }>('SELECT COUNT(*) n FROM tasks WHERE parent_id=?', t.id)!.n,
@@ -104,8 +105,9 @@ export function registerTasks(r: Router) {
       id: newId(), title, description, links: JSON.stringify(parseLinks(b.links)), assigner_id: c.user.id, assignee_id: assignee, parent_id: parentId,
       status: 'todo', priority: b.priority ? oneOf(b.priority, 'priority', TASK_PRIORITY) : 'normal', due_at: parseDue(b.dueAt),
     };
-    S.db.run('INSERT INTO tasks(id,title,description,links,assigner_id,assignee_id,parent_id,status,priority,due_at,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)',
-      t.id, t.title, t.description, t.links, t.assigner_id, t.assignee_id, t.parent_id, t.status, t.priority, t.due_at, ts, ts);
+    const client = optStr(b.client, 'Client', 80) || (parentId ? S.db.get<{ client: string }>('SELECT client FROM tasks WHERE id=?', parentId)?.client || '' : '');
+    S.db.run('INSERT INTO tasks(id,title,description,links,assigner_id,assignee_id,parent_id,status,priority,due_at,created_at,updated_at,client) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)',
+      t.id, t.title, t.description, t.links, t.assigner_id, t.assignee_id, t.parent_id, t.status, t.priority, t.due_at, ts, ts, client);
     S.db.run("INSERT INTO task_events(task_id,user_id,type,created_at) VALUES(?,?,'created',?)", t.id, c.user.id, ts);
     if (parentId) S.db.run("INSERT INTO task_events(task_id,user_id,type,note,created_at) VALUES(?,?,'delegated',?,?)", parentId, c.user.id, title, ts);
     notifyTask(t, c.user.id, 'New task for you', `${c.user.displayName}: ${title}`, [assignee]);
@@ -129,6 +131,7 @@ export function registerTasks(r: Router) {
     if (b.description !== undefined) { S.db.run('UPDATE tasks SET description=? WHERE id=?', optStr(b.description, 'Description', LIMITS.description, true), t.id); changes.push('description'); }
     if (b.links !== undefined) { S.db.run('UPDATE tasks SET links=? WHERE id=?', JSON.stringify(parseLinks(b.links)), t.id); changes.push('links'); }
     if (b.dueAt !== undefined) { S.db.run('UPDATE tasks SET due_at=? WHERE id=?', parseDue(b.dueAt), t.id); changes.push('due date'); }
+    if (b.client !== undefined) { S.db.run('UPDATE tasks SET client=? WHERE id=?', optStr(b.client, 'Client', 80), t.id); changes.push('client'); }
     if (b.priority !== undefined) { S.db.run('UPDATE tasks SET priority=? WHERE id=?', oneOf(b.priority, 'priority', TASK_PRIORITY), t.id); changes.push('priority'); }
     if (b.assigneeId !== undefined && b.assigneeId !== t.assignee_id) {
       const a = vid(b.assigneeId, 'assignee');
@@ -155,6 +158,7 @@ export function registerTasks(r: Router) {
     const ts = now();
     let status = t.status as string;
     const set: string[] = [];
+    const setArgs: unknown[] = [];
     switch (action) {
       case 'start':
         if (!isAssignee) throw forbidden('Only the assignee can start this task.');
@@ -163,13 +167,20 @@ export function registerTasks(r: Router) {
       case 'submit':
         if (!isAssignee) throw forbidden('Only the assignee can submit this task.');
         if (!['todo', 'in_progress', 'changes'].includes(status)) throw bad('This task cannot be submitted now.');
+        if (c.body.hours !== undefined && c.body.hours !== null && c.body.hours !== '') {
+          const h = Number(c.body.hours);
+          if (!Number.isFinite(h) || h < 0 || h > 2000) throw bad('Hours spent must be between 0 and 2000.');
+          set.push('hours_spent=?'); setArgs.push(Math.round(h * 4) / 4);
+        }
         if (t.assigner_id === c.user.id) { status = 'done'; set.push(`submitted_at=${ts}`, `completed_at=${ts}`); }
         else { status = 'submitted'; set.push(`submitted_at=${ts}`); }
         break;
       case 'approve':
         if (!canDecide(c.user, t)) throw forbidden('Only the person who assigned this task can approve it.');
         if (status !== 'submitted') throw bad('Only submitted work can be approved.');
-        status = 'done'; set.push(`completed_at=${ts}`); break;
+        status = 'done'; set.push(`completed_at=${ts}`);
+        if (c.body.rating !== undefined && c.body.rating !== null) { set.push('rating=?'); setArgs.push(int(c.body.rating, 'rating', 1, 5)); }
+        break;
       case 'request_changes':
         if (!canDecide(c.user, t)) throw forbidden('Only the person who assigned this task can request changes.');
         if (status !== 'submitted') throw bad('Only submitted work can be sent back.');
@@ -189,7 +200,7 @@ export function registerTasks(r: Router) {
     }
     if (!TASK_STATUS.includes(status as any)) throw bad('Invalid status.');
     S.db.tx(() => {
-      S.db.run(`UPDATE tasks SET status=?, updated_at=?${set.length ? ', ' + set.join(', ') : ''} WHERE id=?`, status, ts, t.id);
+      S.db.run(`UPDATE tasks SET status=?, updated_at=?${set.length ? ', ' + set.join(', ') : ''} WHERE id=?`, status, ts, ...setArgs, t.id);
       S.db.run('INSERT INTO task_events(task_id,user_id,type,note,file_ids,created_at,on_behalf_of) VALUES(?,?,?,?,?,?,?)', t.id, c.user.id, action, note, JSON.stringify(fileIds), ts, onBehalf);
     });
     const nt = S.db.get('SELECT * FROM tasks WHERE id=?', t.id)!;
@@ -208,6 +219,43 @@ export function registerTasks(r: Router) {
     S.hub.send(audience(t), { t: 'task', id: t.id });
     return { ok: true };
   });
+
+  // ---------- work report: one sheet with every task and daily update in a date range ----------
+  r.get('/api/report', (c) => {
+    const from = int(c.url.searchParams.get('from'), 'from', 0, 4102444800000);
+    const to = int(c.url.searchParams.get('to'), 'to', 0, 4102444800000);
+    if (to <= from || to - from > 5 * 366 * 86400000) throw bad('Pick a date range of up to 5 years.');
+    const person = optId(c.url.searchParams.get('userId'), 'person');
+    if (person && !analyticsVisible(c.user, person) && !S.db.get('SELECT 1 FROM tasks WHERE assigner_id=? AND assignee_id=? LIMIT 1', c.user.id, person)) throw notFound('Member not found.');
+    const client = (c.url.searchParams.get('client') || '').slice(0, 80);
+    const tasks = S.db.all(`SELECT * FROM tasks WHERE ((completed_at>=? AND completed_at<?) OR (completed_at IS NULL AND created_at<? AND status<>'cancelled') OR (created_at>=? AND created_at<?))
+      ${person ? 'AND assignee_id=?' : ''} ${client ? 'AND client=? COLLATE NOCASE' : ''} ORDER BY COALESCE(completed_at, updated_at) DESC LIMIT 5000`,
+      ...[from, to, to, from, to, ...(person ? [person] : []), ...(client ? [client] : [])]);
+    const rows: any[] = [];
+    for (const t of tasks) {
+      if (!taskVisible(c.user, t as any)) continue;
+      const files = S.db.all<{ id: string; name: string; size: number }>("SELECT id, name, size FROM files WHERE scope='task' AND scope_id=? AND deleted=0 ORDER BY created_at", t.id);
+      const elapsed = t.completed_at && (t.started_at || t.created_at) ? Math.round(((t.completed_at - (t.started_at || t.created_at)) / 3600000) * 10) / 10 : null;
+      rows.push({
+        kind: 'task', id: t.id, date: t.completed_at || t.updated_at, personId: t.assignee_id, byId: t.assigner_id, work: t.title, details: t.description, client: t.client,
+        status: t.status, hours: t.hours_spent, elapsedHours: elapsed, dueAt: t.due_at, completedAt: t.completed_at,
+        onTime: t.completed_at ? (t.due_at ? t.completed_at <= t.due_at : true) : t.due_at && t.due_at < now() ? false : null,
+        revisions: t.revisions, rating: t.rating, links: JSON.parse(t.links || '[]'), files,
+      });
+    }
+    const dFrom = new Date(from), dTo = new Date(to - 1);
+    const ymd = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    const logs = S.db.all(`SELECT * FROM worklog WHERE day>=? AND day<=? ${person ? 'AND user_id=?' : ''} ${client ? 'AND client=? COLLATE NOCASE' : ''} ORDER BY day DESC LIMIT 5000`,
+      ...[ymd(dFrom), ymd(dTo), ...(person ? [person] : []), ...(client ? [client] : [])]);
+    for (const w of logs) {
+      if (!analyticsVisible(c.user, w.user_id)) continue;
+      rows.push({ kind: 'log', id: w.id, date: new Date(w.day + 'T12:00:00').getTime(), personId: w.user_id, byId: w.author_id, work: w.note, details: '', client: w.client,
+        status: 'logged', hours: w.hours, elapsedHours: null, dueAt: null, completedAt: null, onTime: null, revisions: 0, rating: null, links: JSON.parse(w.links || '[]'), files: [] });
+    }
+    rows.sort((a, b) => b.date - a.date);
+    const clients = [...new Set(S.db.all<{ client: string }>("SELECT DISTINCT client FROM tasks WHERE client<>'' UNION SELECT DISTINCT client FROM worklog WHERE client<>'' LIMIT 500").map((x) => x.client))].sort();
+    return { rows, clients };
+  }, { rate: { key: 'report', max: 120, windowMs: 60000 } });
 
   // ---------- dashboard ----------
   r.get('/api/dashboard', (c) => {

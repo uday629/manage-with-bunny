@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { api, bunny, useStore, toast, fmtAgo, loadUsers, loadMe, setState, clearSession } from '../api';
 import { Avatar, Btn, Field, Icon, Logo, Spinner, confirmDialog, useAsync } from '../ui';
 import { NetCheckModal } from './NetCheck';
+import { PhotoEditor } from './Photo';
 
 const WEBSITE = 'https://framelabmedia.odoo.com/';
 const INSTA = 'https://www.instagram.com/bunnysframelab/';
@@ -16,6 +17,7 @@ export function Settings() {
   const [next2, setNext2] = useState('');
   const [busy, setBusy] = useState<string | null>(null);
   const [net, setNet] = useState(false);
+  const [photo, setPhoto] = useState(false);
   const sessions = useAsync(() => api<any[]>('GET', '/api/auth/sessions'), []);
   const refreshApp = async () => setState({ app: await bunny.state() });
 
@@ -46,7 +48,12 @@ export function Settings() {
       <div className="page-head"><div><h1>Settings</h1><p>Your profile, security and this app.</p></div><Btn icon="logout" onClick={logout}>Sign out</Btn></div>
       <div className="settings-grid">
         <div className="card col">
-          <div className="row"><Avatar user={user} size={52} ring /><div><h3>{user.displayName}</h3><p className="dim">@{user.username} · {me.roles.find((r) => r.id === user.roleId)?.name}</p></div></div>
+          <div className="row">
+            <button className="avatar-edit" onClick={() => setPhoto(true)} title="Change photo" aria-label="Change profile photo"><Avatar user={user} size={64} ring /><i><Icon name="image" size={14} /></i></button>
+            <div className="grow"><h3>{user.displayName}</h3><p className="dim">@{user.username} · {me.roles.find((r) => r.id === user.roleId)?.name}</p>
+              <Btn small kind="soft" icon="image" onClick={() => setPhoto(true)} style={{ marginTop: 6 }}>{user.avatarVer ? 'Change photo' : 'Add a photo'}</Btn></div>
+          </div>
+          {photo && <PhotoEditor user={user} onClose={() => setPhoto(false)} />}
           <Field label="Display name"><div className="row"><input value={name} onChange={(e) => setName(e.target.value)} maxLength={60} /><Btn loading={busy === 'name'} disabled={!name.trim() || name === user.displayName} onClick={saveName}>Save</Btn></div></Field>
         </div>
 

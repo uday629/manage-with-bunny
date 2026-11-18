@@ -10,6 +10,7 @@ const Chat = lazy(() => import('./views/Chat').then((m) => ({ default: m.Chat })
 const Tasks = lazy(() => import('./views/Tasks').then((m) => ({ default: m.Tasks })));
 const Team = lazy(() => import('./views/Team').then((m) => ({ default: m.Team })));
 const Files = lazy(() => import('./views/Files').then((m) => ({ default: m.Files })));
+const Report = lazy(() => import('./views/Report').then((m) => ({ default: m.Report })));
 const Records = lazy(() => import('./views/Records').then((m) => ({ default: m.Records })));
 const Analytics = lazy(() => import('./views/Analytics').then((m) => ({ default: m.Analytics })));
 const Admin = lazy(() => import('./views/Admin').then((m) => ({ default: m.Admin })));
@@ -146,6 +147,7 @@ const NAV: { id: string; label: string; icon: string; show?: () => boolean }[] =
   { id: 'tasks', label: 'Tasks', icon: 'tasks' },
   { id: 'team', label: 'Team chart', icon: 'team' },
   { id: 'files', label: 'Files', icon: 'files' },
+  { id: 'report', label: 'Work report', icon: 'layers' },
   { id: 'records', label: 'Records', icon: 'records' },
   { id: 'analytics', label: 'Performance', icon: 'chart' },
   { id: 'admin', label: 'Admin', icon: 'shield', show: () => ['users.approve', 'users.manage', 'roles.manage', 'storage.manage', 'audit.view', 'workspace.settings'].some((p) => can(p as any)) },
@@ -160,7 +162,7 @@ function Shell() {
   const pending = useStore((s) => s.pending);
   const meUser = useStore((s) => (s.me ? s.users[s.me.user.id] || s.me.user : null));
   const role = me?.roles.find((r) => r.id === me.user.roleId);
-  const View = { home: Home, chat: Chat, tasks: Tasks, team: Team, files: Files, records: Records, analytics: Analytics, admin: Admin, settings: Settings }[route] || Home;
+  const View = { home: Home, chat: Chat, tasks: Tasks, team: Team, files: Files, report: Report, records: Records, analytics: Analytics, admin: Admin, settings: Settings }[route] || Home;
   return (
     <div className="shell">
       <div className="titlebar" />

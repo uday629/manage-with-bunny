@@ -291,6 +291,35 @@ async function main() {
     ok((await req('GET', `/api/sheets/${sh.json.id}`, undefined, eli.token)).status === 200, 'shared sheet readable');
     ok((await req('POST', `/api/sheets/${sh.json.id}/rows`, { data: {} }, eli.token)).status === 403, 'view-only share cannot edit');
 
+    // ---- profile photos ----
+    const png = Buffer.concat([Buffer.from('89504e470d0a1a0a', 'hex'), crypto.randomBytes(500)]);
+    const av = await req('PUT', `/api/users/${eli.id}/avatar`, undefined, eli.token, png);
+    ok(av.status === 200 && av.json.avatarVer === 1, 'member uploads own profile photo');
+    ok((await req('PUT', `/api/users/${mia.id}/avatar`, undefined, eli.token, png)).status === 403, "cannot change someone else's photo");
+    ok((await req('PUT', `/api/users/${eli.id}/avatar`, undefined, eli.token, Buffer.from('<svg onload=alert(1)>' + 'x'.repeat(100)))).status === 400, 'non-image (SVG/HTML) photo rejected');
+    ok((await req('PUT', `/api/users/${eli.id}/avatar`, undefined, eli.token, Buffer.concat([png, crypto.randomBytes(500 * 1024)]))).status === 413, 'oversized photo rejected');
+    const avg = await req('GET', `/api/users/${eli.id}/avatar`, undefined, mia.token);
+    ok(avg.status === 200 && avg.headers['content-type'] === 'image/png' && avg.buf.equals(png), 'manager sees member photo');
+    ok((await req('GET', `/api/users/${eli.id}/avatar`, undefined, zed.token)).status === 404, 'photo hidden from people outside the chain');
+    // ---- client, hours, quality rating, work report ----
+    const rt1 = await req('POST', '/api/tasks', { title: 'Reel for XYZ Fashion', client: 'XYZ Fashion', assigneeId: eli.id, links: ['https://drive.google.com/x'] }, mia.token);
+    ok(rt1.json.client === 'XYZ Fashion', 'task stores client');
+    ok((await req('POST', `/api/tasks/${rt1.json.id}/action`, { action: 'submit', hours: -2 }, eli.token)).status === 400, 'negative hours rejected');
+    await req('POST', `/api/tasks/${rt1.json.id}/action`, { action: 'submit', hours: 3.5 }, eli.token);
+    ok((await req('POST', `/api/tasks/${rt1.json.id}/action`, { action: 'approve', rating: 9 }, mia.token)).status === 400, 'rating outside 1-5 rejected');
+    const ap2 = await req('POST', `/api/tasks/${rt1.json.id}/action`, { action: 'approve', rating: 4 }, mia.token);
+    ok(ap2.json.status === 'done' && ap2.json.hoursSpent === 3.5 && ap2.json.rating === 4, 'hours spent + quality rating saved');
+    const td2 = new Date(); const dstr2 = `${td2.getFullYear()}-${String(td2.getMonth() + 1).padStart(2, "0")}-${String(td2.getDate()).padStart(2, "0")}`;
+    await req('POST', `/api/users/${eli.id}/worklog`, { day: dstr2, hours: 2, note: 'Color grade', client: 'XYZ Fashion' }, eli.token);
+    const from = Date.now() - 86400000, to = Date.now() + 60000;
+    const rep = await req('GET', `/api/report?from=${from}&to=${to}&client=${encodeURIComponent('XYZ Fashion')}`, undefined, mia.token);
+    const rr = rep.json.rows;
+    ok(rep.status === 200 && rr.some((r: any) => r.kind === 'task' && r.work === 'Reel for XYZ Fashion' && r.hours === 3.5 && r.rating === 4 && r.links.length === 1) && rr.some((r: any) => r.kind === 'log' && r.client === 'XYZ Fashion'), 'work report lists task + daily update for the client');
+    ok(rep.json.clients.includes('XYZ Fashion'), 'work report offers client list');
+    ok((await req('GET', `/api/report?from=${from}&to=${to}`, undefined, zed.token)).json.rows.every((r: any) => r.personId === zed.id), 'work report only shows what you may see');
+    ok((await req('GET', `/api/report?from=${from}&to=${to}&userId=${mia.id}`, undefined, eli.token)).status === 404, "employee cannot request manager's report");
+    ok((await req('GET', `/api/report?from=${to}&to=${from}`, undefined, mia.token)).status === 400, 'invalid range rejected');
+
     // ---- remote profiles (off-Wi-Fi members kept up to date by a caretaker) ----
     ok((await req('POST', '/api/users/remote', { displayName: 'Sara Remote', roleId: roleId('Employee') }, eli.token)).status === 403, 'employee cannot create remote profiles');
     const rp = await req('POST', '/api/users/remote', { displayName: 'Sara Remote', title: 'Remote Editor', roleId: roleId('Employee'), managerId: mia.id, caretakerId: mia.id, remoteNote: 'Works from Sylhet' }, owner.token);

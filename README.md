@@ -31,6 +31,8 @@ Verify downloads with `SHA256SUMS.txt` on the release page.
 - **Files**: resumable uploads at full Wi-Fi speed, any size (limit configurable), inline video / image / audio, versions, automatic de-duplication, cleanup of duplicates and old versions.
 - **Tasks**: assign down the chain, delegate subtasks, start, submit with files, request changes, approve, cancel, reopen; full history; month filter.
 - **Remote teammates**: profiles for people who cannot be on the office Wi-Fi. A caretaker moves their tasks forward on their behalf and keeps a daily work log; "Activate login" later turns it into a real account with the same history.
+- **Work report**: one sheet of every task and daily update for Today / 2 / 3 / 7 / 30 / 90 days / 6 months / 1 year / custom: person, work, who gave it, client, hours, on time or late, quality stars, Drive links and files on the host. Excel / PDF export.
+- **Profile photos** with crop and position (caretakers can add photos for remote teammates).
 - **Team chart**, **Records** (private shareable sheets), **Performance** (monthly score, on-time rate, overdue, logged hours, reviews, 12-month history).
 - **Export to Excel and PDF**: tasks, records, performance, work logs, security log.
 - **Admin**: join requests, members, custom roles with 12 permissions, join-code rotation, storage report and cleanup, daily backups, move storage to another drive, security log.
@@ -56,9 +58,9 @@ Verify downloads with `SHA256SUMS.txt` on the release page.
 
 | Test | Result |
 |---|---|
-| API and security tests against a real host | 132 / 132 passed |
+| API and security tests against a real host | 147 / 147 passed |
 | Internal penetration test (auth bypass, IDOR, traversal, smuggling, prototype pollution, TLS downgrade, WebSocket abuse, races, revoked-link replay, brute force) | 56 / 56 attacks blocked |
-| UI end-to-end with a real host app and member app (setup, join, chat, voice, search, seen, files, tasks, remote profiles, Excel/PDF export, network check, restarts and auto-reconnect) | 46 / 46 passed |
+| UI end-to-end with a real host app and member app (setup, join, chat, voice, search, seen, files, tasks, remote profiles, profile photo, work report, Excel/PDF export, network check, restarts and auto-reconnect) | 52 / 52 passed |
 | 15 people at once for 60 s + five 40 MB uploads | 1,989 requests, 0 errors; 9,296 / 9,296 live deliveries, median 1 ms; host memory 72-81 MB |
 | 12 months of data (41 people, 300,000 messages, 25,000 tasks, 20,000 files) | every screen under 200 ms; host starts in 84 ms |
 | Real 2.9 GiB (3.11 GB) LLM model file through the apps | upload 122 MB/s, download 306 MB/s, byte-identical (1 GB in about 8 s; on Wi-Fi the network is the limit) |

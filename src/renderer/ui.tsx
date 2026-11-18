@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode, type ButtonHTMLAttributes } from 'react';
 import { createRoot } from 'react-dom/client';
-import { useStore, type User, setState , exportTable, type ExportTable } from './api';
+import { useStore, type User, setState , exportTable, type ExportTable, avatarSrc } from './api';
 
 const P: Record<string, string> = {
   home: 'M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z',
@@ -41,9 +41,11 @@ export function Logo({ size = 32 }: { size?: number }) { return <img src="logo.p
 export function Avatar({ user, size = 32, ring = false }: { user?: User | null; size?: number; ring?: boolean }) {
   const name = user?.displayName || '?';
   const initials = name.split(/\s+/).map((p) => p[0]).slice(0, 2).join('').toUpperCase();
+  useStore((s) => s.ver.avatars);
+  const src = user ? avatarSrc(user.id, user.avatarVer) : null;
   return (
     <span className={'avatar' + (ring ? ' ring' : '')} style={{ width: size, height: size, fontSize: size * 0.38, background: user?.color || '#333' }} title={name}>
-      {initials}
+      {src ? <img src={src} alt="" className="avatar-img" draggable={false} /> : initials}
       {user && !user.isRemote && <i className={'dot ' + (user.online ? 'on' : 'off')} style={{ width: Math.max(8, size * 0.28), height: Math.max(8, size * 0.28) }} />}
     </span>
   );

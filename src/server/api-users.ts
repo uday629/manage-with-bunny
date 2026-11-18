@@ -169,7 +169,7 @@ export function registerUsers(r: Router) {
     const rows = month && /^\d{4}-\d{2}$/.test(month)
       ? S.db.all('SELECT * FROM worklog WHERE user_id=? AND day LIKE ? ORDER BY day DESC, created_at DESC LIMIT 500', uid, month + '-%')
       : S.db.all('SELECT * FROM worklog WHERE user_id=? ORDER BY day DESC, created_at DESC LIMIT 200', uid);
-    return { canWrite: canWriteLog(c.user, uid), entries: rows.map((w) => ({ id: w.id, userId: w.user_id, authorId: w.author_id, day: w.day, hours: w.hours, note: w.note, links: JSON.parse(w.links), createdAt: w.created_at })) };
+    return { canWrite: canWriteLog(c.user, uid), entries: rows.map((w) => ({ id: w.id, userId: w.user_id, authorId: w.author_id, day: w.day, hours: w.hours, note: w.note, client: w.client, links: JSON.parse(w.links), createdAt: w.created_at })) };
   });
   r.post('/api/users/:id/worklog', (c) => {
     const uid = vid(c.params.id);
@@ -184,10 +184,11 @@ export function registerUsers(r: Router) {
       hours = Math.round(hours * 4) / 4;
     }
     const note = str(c.body.note, 'Update', 1, LIMITS.note, { multiline: true });
+    const client = optStr(c.body.client, 'Client', 80);
     if (c.body.links !== undefined && (!Array.isArray(c.body.links) || c.body.links.length > LIMITS.maxLinks)) throw bad('Invalid links.');
     const links = ((c.body.links || []) as unknown[]).filter((x) => typeof x === 'string' && x.trim()).map(safeUrl);
     const wid = newId();
-    S.db.run('INSERT INTO worklog(id,user_id,author_id,day,hours,note,links,created_at) VALUES(?,?,?,?,?,?,?,?)', wid, uid, c.user.id, day, hours, note, JSON.stringify(links), now());
+    S.db.run('INSERT INTO worklog(id,user_id,author_id,day,hours,note,links,created_at,client) VALUES(?,?,?,?,?,?,?,?,?)', wid, uid, c.user.id, day, hours, note, JSON.stringify(links), now(), client);
     const aud = new Set([uid, ...ancestors(uid)]);
     const ct = caretakerOf(uid); if (ct) aud.add(ct);
     S.hub.send(aud, { t: 'worklog', userId: uid });
@@ -200,6 +201,44 @@ export function registerUsers(r: Router) {
     S.db.run('DELETE FROM worklog WHERE id=?', w.id);
     S.hub.send([w.user_id, ...ancestors(w.user_id)], { t: 'worklog', userId: w.user_id });
     return { ok: true };
+  });
+
+  // ---------- profile photos ----------
+  // The app crops and re-encodes the photo (256x256) before upload; the host only accepts small PNG/JPEG/WebP files.
+  const canEditAvatar = (u: AuthUser, target: string) => target === u.id || (isRemote(target) && (caretakerOf(target) === u.id || u.perms.has('users.manage')));
+  r.put('/api/users/:id/avatar', async (c) => {
+    const uid = vid(c.params.id);
+    if (!S.db.get("SELECT 1 FROM users WHERE id=? AND status='active'", uid)) { c.req.resume(); throw notFound('Member not found.'); }
+    if (!canEditAvatar(c.user, uid)) { c.req.resume(); throw forbidden('You can only change your own photo.'); }
+    if (Number(c.req.headers['content-length'] || 0) > 400 * 1024) { c.req.resume(); throw new HttpError(413, 'too_large', 'Photo is too large.'); }
+    const chunks: Buffer[] = []; let size = 0;
+    for await (const ch of c.req) { size += (ch as Buffer).length; if (size > 400 * 1024) throw new HttpError(413, 'too_large', 'Photo is too large.'); chunks.push(ch as Buffer); }
+    const data = Buffer.concat(chunks);
+    const hex = data.subarray(0, 12).toString('hex');
+    const mime = hex.startsWith('89504e47') ? 'image/png' : hex.startsWith('ffd8ff') ? 'image/jpeg' : hex.startsWith('52494646') && data.toString('ascii', 8, 12) === 'WEBP' ? 'image/webp' : '';
+    if (!mime || data.length < 64) throw bad('Please use a PNG, JPEG or WebP image.');
+    S.db.run('INSERT INTO avatars(user_id,data,mime,updated_at) VALUES(?,?,?,?) ON CONFLICT(user_id) DO UPDATE SET data=excluded.data, mime=excluded.mime, updated_at=excluded.updated_at', uid, data, mime, now());
+    S.db.run('UPDATE users SET avatar_ver=avatar_ver+1 WHERE id=?', uid);
+    broadcastUsers(uid);
+    return publicUser(S.db.get('SELECT * FROM users WHERE id=?', uid));
+  }, { raw: true, rate: { key: 'avatar', max: 30, windowMs: 60000 } });
+  r.del('/api/users/:id/avatar', (c) => {
+    const uid = vid(c.params.id);
+    if (!canEditAvatar(c.user, uid)) throw forbidden('You can only change your own photo.');
+    S.db.run('DELETE FROM avatars WHERE user_id=?', uid);
+    S.db.run('UPDATE users SET avatar_ver=0 WHERE id=?', uid);
+    broadcastUsers(uid);
+    return { ok: true };
+  });
+  r.get('/api/users/:id/avatar', (c) => {
+    const uid = vid(c.params.id);
+    const vis = visibleUserIds(c.user);
+    if (vis !== 'all' && !vis.has(uid)) throw notFound('No photo.');
+    const a = S.db.get<{ data: Uint8Array; mime: string }>('SELECT data, mime FROM avatars WHERE user_id=?', uid);
+    if (!a) throw notFound('No photo.');
+    const buf = Buffer.from(a.data);
+    c.res.writeHead(200, { 'Content-Type': a.mime, 'Content-Length': buf.length, 'Cache-Control': 'private, max-age=86400' });
+    c.res.end(buf);
   });
 
   r.post('/api/owner/transfer', (c) => {

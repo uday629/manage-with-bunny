@@ -195,6 +195,7 @@ export function publicUser(r: any) {
     id: r.id, username: r.username, displayName: r.display_name, title: r.title, roleId: r.role_id, managerId: r.manager_id,
     status: r.status, isOwner: !!r.is_owner, color: r.color, pubkey: r.pubkey, keyVersion: r.key_version,
     online: S.hub?.isOnline(r.id) ?? false, lastSeen: r.last_seen,
+    avatarVer: r.avatar_ver || 0,
     isRemote: !!r.is_remote, caretakerId: r.caretaker_id ?? null, remoteNote: r.is_remote ? r.remote_note || '' : '',
   };
 }

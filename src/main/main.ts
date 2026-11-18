@@ -130,7 +130,7 @@ function registerAppProtocol() {
 function createWindow() {
   win = new BrowserWindow({
     width: 1360, height: 860, minWidth: 980, minHeight: 640, show: false, backgroundColor: '#08080A', title: 'Manage with Bunny',
-    icon: path.join(__dirname, 'logo.png'),
+    icon: path.join(__dirname, process.platform === 'win32' ? 'icon.ico' : 'logo.png'),
     titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'hidden',
     titleBarOverlay: process.platform === 'win32' ? { color: '#08080A', symbolColor: '#F4F3F1', height: 38 } : undefined,
     webPreferences: {
@@ -556,7 +556,8 @@ app.on('web-contents-created', (_e, contents) => {
 });
 
 app.whenReady().then(async () => {
-  app.setAppUserModelId('com.bunnysframelab.managewithbunny');
+  // Development runs use a separate ID so Windows never caches the generic Electron icon for the real app.
+  app.setAppUserModelId(app.isPackaged ? 'com.bunnysframelab.managewithbunny' : 'com.bunnysframelab.managewithbunny.dev');
   if (process.platform === 'darwin') {
     Menu.setApplicationMenu(Menu.buildFromTemplate([{ role: 'appMenu' }, { role: 'editMenu' }, { role: 'windowMenu' }]));
   } else Menu.setApplicationMenu(null);

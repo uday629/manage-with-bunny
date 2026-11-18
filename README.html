@@ -94,7 +94,7 @@ footer img { width: 54px; height: 54px; margin-bottom: 10px; }
       <a class="btn" href="https://github.com/uday629/manage-with-bunny/releases/latest">Download for Mac <small>.dmg</small></a>
       <a class="btn" href="UI.html">See the app</a>
     </div>
-    <p style="margin-top:22px;font-size:14px">Version 1.2.0 · Made by <b style="color:#fff">Bunnys Framelab</b> · <a href="https://framelabmedia.odoo.com/">framelabmedia.odoo.com</a> · <a href="https://www.instagram.com/bunnysframelab/">@bunnysframelab</a></p>
+    <p style="margin-top:22px;font-size:14px">Version 1.3.0 · Made by <b style="color:#fff">Bunnys Framelab</b> · <a href="https://framelabmedia.odoo.com/">framelabmedia.odoo.com</a> · <a href="https://www.instagram.com/bunnysframelab/">@bunnysframelab</a></p>
   </div>
 </header>
 
@@ -107,7 +107,7 @@ footer img { width: 54px; height: 54px; margin-bottom: 10px; }
     <div class="card"><div class="ic">2</div><h3>Files at Wi-Fi speed</h3><p>Send videos and huge files like a local-send app. Uploads resume after a drop, identical files are stored once, versions are kept.</p></div>
     <div class="card"><div class="ic">3</div><h3>Task pipeline</h3><p>Owner to managers to team leaders to employees and back up: assign, delegate, submit with files, request changes, approve.</p></div>
     <div class="card"><div class="ic">4</div><h3>Team chart</h3><p>A tree of who works under whom. Each person sees their own part; the owner sees everything.</p></div>
-    <div class="card"><div class="ic">5</div><h3>Records &amp; reports</h3><p>Private sheets for work handed out, hiring, expenses, leads. Export anything to Excel or PDF.</p></div>
+    <div class="card"><div class="ic">5</div><h3>Work report &amp; records</h3><p>One sheet with every task and daily update for any period (today to a year, or custom): who, for whom, which client, hours, on time or late, quality, links and files. Plus private sheets. Export to Excel or PDF.</p></div>
     <div class="card"><div class="ic">6</div><h3>Performance</h3><p>Monthly scores, on-time rate, overdue work, hours logged, 12-month history and manager reviews.</p></div>
   </div>
 </div></section>
@@ -119,7 +119,7 @@ footer img { width: 54px; height: 54px; margin-bottom: 10px; }
     <div class="card">
       <h3>Windows 10 / 11</h3>
       <ol>
-        <li>Download <code>Manage-with-Bunny-Setup-1.2.0.exe</code> from the <a href="https://github.com/uday629/manage-with-bunny/releases/latest">Releases page</a>.</li>
+        <li>Download <code>Manage-with-Bunny-Setup-1.3.0.exe</code> from the <a href="https://github.com/uday629/manage-with-bunny/releases/latest">Releases page</a>.</li>
         <li>Double-click it and press <b>Yes</b> on the Windows permission prompt. It installs, adds a desktop shortcut and opens.</li>
         <li>If Windows shows <b>"Windows protected your PC"</b>: click <b>More info</b> then <b>Run anyway</b> (see <a href="#security">why</a>).</li>
       </ol>
@@ -173,6 +173,7 @@ footer img { width: 54px; height: 54px; margin-bottom: 10px; }
       <li>Admins see duplicates, old versions and storage use, and can clean up in one click.</li>
     </ul></div>
     <div class="card"><h3>Records, Performance, Reports</h3><ul>
+      <li><b>Work report</b>: pick Today, 2, 3, 7, 30, 90 days, 6 months, 1 year or Custom; filter by person and client; see work, who gave it, hours, on time / late, quality stars, Drive links and files in one table.</li>
       <li><b>Records</b>: private sheets (who got which work, hiring, expenses, leads). Only you and people you share with can see them.</li>
       <li><b>Performance</b>: monthly score per person, hours logged, reviews. Managers rate their team each month.</li>
       <li><b>Excel</b> and <b>PDF</b> buttons on tasks, records, performance, work logs and the security log.</li>
@@ -223,9 +224,9 @@ footer img { width: 54px; height: 54px; margin-bottom: 10px; }
   <h3 style="margin-top:28px">Tests that were actually run</h3>
   <div class="tablewrap"><table>
     <tr><th>Test</th><th>Result</th></tr>
-    <tr><td>API and security tests against a real host</td><td><span class="pill">132 / 132 passed</span></td></tr>
+    <tr><td>API and security tests against a real host</td><td><span class="pill">147 / 147 passed</span></td></tr>
     <tr><td>Internal penetration test (56 attacks: auth bypass, IDOR, traversal, smuggling, TLS downgrade, races...)</td><td><span class="pill">56 / 56 blocked</span></td></tr>
-    <tr><td>UI end-to-end with two real apps (setup, join, chat, voice, search, seen, files, tasks, remote, export, network check, restarts)</td><td><span class="pill">46 / 46 passed</span></td></tr>
+    <tr><td>UI end-to-end with two real apps (setup, join, chat, voice, search, seen, files, tasks, remote, export, network check, restarts)</td><td><span class="pill">52 / 52 passed</span></td></tr>
     <tr><td>15 people at once for 60 s plus five 40 MB uploads</td><td><span class="pill">0 errors, every message delivered, median 1 ms</span></td></tr>
     <tr><td>12 months of data: 300,000 messages, 25,000 tasks, 20,000 files</td><td><span class="pill">every screen under 200 ms</span></td></tr>
     <tr><td>Real 2.9 GiB AI model file sent through the app</td><td><span class="pill">122 MB/s up, 306 MB/s down, byte-identical</span></td></tr>

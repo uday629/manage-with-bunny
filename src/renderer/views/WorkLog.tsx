@@ -16,11 +16,12 @@ export function WorkLog({ userId, compact }: { userId: string; compact?: boolean
   const [hours, setHours] = useState('');
   const [note, setNote] = useState('');
   const [links, setLinks] = useState('');
+  const [client, setClient] = useState('');
   const [busy, setBusy] = useState(false);
   const add = async () => {
     setBusy(true);
     try {
-      await api('POST', `/api/users/${userId}/worklog`, { day, hours: hours === '' ? null : Number(hours), note, links: links.split(/\s+/).filter(Boolean) });
+      await api('POST', `/api/users/${userId}/worklog`, { day, hours: hours === '' ? null : Number(hours), note, client, links: links.split(/\s+/).filter(Boolean) });
       setNote(''); setLinks(''); setHours(''); reload();
       toast('Work update saved', 'ok');
     } catch (e) { toast((e as Error).message, 'err'); } finally { setBusy(false); }
@@ -47,6 +48,7 @@ export function WorkLog({ userId, compact }: { userId: string; compact?: boolean
             <Field label="Hours (optional)"><input type="number" min={0} max={24} step={0.25} value={hours} onChange={(e) => setHours(e.target.value)} /></Field>
           </div>
           <Field label="What was done"><textarea rows={compact ? 2 : 3} value={note} onChange={(e) => setNote(e.target.value)} maxLength={4000} placeholder="e.g. Finished 3 reels for XYZ, sent drafts by email" /></Field>
+          <Field label="Client (optional)"><input value={client} onChange={(e) => setClient(e.target.value)} maxLength={80} placeholder="Which client was this for?" /></Field>
           <Field label="Links (optional, one per line)"><textarea rows={1} style={{ minHeight: 42 }} value={links} onChange={(e) => setLinks(e.target.value)} placeholder="https://drive.google.com/..." /></Field>
           <Btn kind="primary" icon="plus" loading={busy} disabled={!note.trim() || !day} onClick={add} style={{ alignSelf: 'flex-start' }}>Add update</Btn>
         </div>
