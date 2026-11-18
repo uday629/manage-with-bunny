@@ -18,9 +18,9 @@
     "start": "node build.mjs --dev && electron .",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test:server": "node build.mjs && esbuild tests/integration.ts --bundle --platform=node --format=cjs --target=node24 --outfile=tests/.tmp/integration.cjs --log-level=warning && node tests/.tmp/integration.cjs",
-    "dist:win": "node build.mjs && electron-builder --win --x64",
-    "dist:mac": "node build.mjs && electron-builder --mac --x64 --arm64",
-    "dist:mac:signed": "node build.mjs && electron-builder --mac --x64 --arm64 -c.mac.identity=null -c.mac.hardenedRuntime=true -c.mac.entitlements=build/entitlements.mac.plist -c.mac.entitlementsInherit=build/entitlements.mac.plist",
+    "dist:win": "node build.mjs && electron-builder --win --x64 --publish never",
+    "dist:mac": "node build.mjs && electron-builder --mac --x64 --arm64 --publish never",
+    "dist:mac:signed": "node build.mjs && electron-builder --mac --x64 --arm64 -c.mac.identity=null -c.mac.hardenedRuntime=true -c.mac.entitlements=build/entitlements.mac.plist -c.mac.entitlementsInherit=build/entitlements.mac.plist --publish never",
     "test:pentest": "node build.mjs && esbuild tests/pentest.ts --bundle --platform=node --format=cjs --target=node24 --outfile=tests/.tmp/pentest.cjs --log-level=warning && node tests/.tmp/pentest.cjs",
     "test:load": "node build.mjs && esbuild tests/load.ts --bundle --platform=node --format=cjs --target=node24 --outfile=tests/.tmp/load.cjs --log-level=warning && node tests/.tmp/load.cjs users && node tests/.tmp/load.cjs months"
   },
