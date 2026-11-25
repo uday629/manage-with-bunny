@@ -11,7 +11,7 @@ Go to **[Releases](../../releases/latest)** and download **`Manage-with-Bunny-<v
 
 - `Windows/` the Windows installer, `Mac (Apple Silicon)/` and `Mac (Intel)/` the Mac installers
 - `README.html` complete guide: requirements, install, uninstall, first-time setup, how every feature works, network help, security, limitations, FAQ (works offline)
-- `UI.html` a tour of every screen, `SECURITY_REPORT.md`, `SHA256SUMS.txt`
+- `UI.html` a tour of every screen, `SHA256SUMS.txt`
 
 The installers are also attached to the release separately.
 
@@ -34,6 +34,9 @@ Verify downloads with `SHA256SUMS.txt` on the release page.
 ## Features
 
 - **Chat**: end-to-end encrypted direct messages, group chats, **voice messages**, replies, edits, **search** (Bengali and English, jump to result), **seen / not seen** ticks and "Seen by ...", typing indicator, offline outbox, drag-and-drop and paste.
+- **Folders**: drag a folder (or use the folder button) and it is packed into one uncompressed .zip and sent; receivers see live "X is sending..." progress, then preview or download.
+- **Attendance**: office start/end, late-after minutes, working days and holidays; Check in / Check out (host clock); automatic absent; HR corrections (leave, half day, holiday); monthly sheet with attendance % and Excel/PDF export.
+- **Positions**: 17 ready-made (Owner, Business Partner, Director, Manager, HR, Sales / Production / Marketing Manager, Accountant, Team Leader, Lead Generator, Video Editor, Graphic Designer, Content Writer, Employee, Intern, Freelancer) plus "+ New position" to type your own anywhere a role is chosen.
 - **Files**: resumable uploads at full Wi-Fi speed, any size (limit configurable), inline video / image / audio, versions, automatic de-duplication, cleanup of duplicates and old versions.
 - **Tasks**: assign down the chain, delegate subtasks, start, submit with files, request changes, approve, cancel, reopen; full history; month filter.
 - **Remote teammates**: profiles for people who cannot be on the office Wi-Fi. A caretaker moves their tasks forward on their behalf and keeps a daily work log; "Activate login" later turns it into a real account with the same history.
@@ -64,7 +67,7 @@ Same local network only (no internet access; remote people use remote profiles);
 
 - Traffic is TLS 1.3 with the host certificate pinned by fingerprint; joining needs the code **and** admin approval.
 - Passwords never leave the device (Argon2id). Direct messages are end-to-end encrypted (X25519 + AES-256-GCM); the host only stores ciphertext.
-- Every request is authorised on the host: roles, reporting chain, resource ownership. See [SECURITY_REPORT.md](SECURITY_REPORT.md).
+- Every request is authorised on the host: roles, reporting chain, resource ownership.. Details in the Security section of README.html.
 
 > **Turn on BitLocker (Windows) or FileVault (Mac) on the host computer.** Group chats, tasks, records and files are protected by the app but stored unencrypted on the host's disk. Anyone who can log in to that computer or take its drive could read them. Windows: *Settings, Privacy & security, Device encryption* (or *Control Panel, BitLocker Drive Encryption*) for the drive that holds the storage folder.
 
@@ -74,12 +77,13 @@ Same local network only (no internet access; remote people use remote profiles);
 
 | Test | Result |
 |---|---|
-| API and security tests against a real host | 147 / 147 passed |
+| API and security tests against a real host | 179 / 179 passed |
 | Internal penetration test (auth bypass, IDOR, traversal, smuggling, prototype pollution, TLS downgrade, WebSocket abuse, races, revoked-link replay, brute force) | 56 / 56 attacks blocked |
-| UI end-to-end with a real host app and member app (setup, join, chat, voice, search, seen, files, tasks, remote profiles, profile photo, work report, Excel/PDF export, network check, restarts and auto-reconnect) | 52 / 52 passed |
+| UI end-to-end with a real host app and member app (setup, join, chat, voice, search, seen, files, tasks, remote profiles, profile photo, work report, folder transfer with live progress, attendance, custom positions, Excel/PDF export, network check, restarts and auto-reconnect) | 64 / 64 passed |
 | 15 people at once for 60 s + five 40 MB uploads | 1,989 requests, 0 errors; 9,296 / 9,296 live deliveries, median 1 ms; host memory 72-81 MB |
 | 12 months of data (41 people, 300,000 messages, 25,000 tasks, 20,000 files) | every screen under 200 ms; host starts in 84 ms |
 | Real 2.9 GiB (3.11 GB) LLM model file through the apps | upload 122 MB/s, download 306 MB/s, byte-identical (1 GB in about 8 s; on Wi-Fi the network is the limit) |
+| Two independent QA agents (file/folder transfer: 1,500 files + 300 MB, cancel, resume, errors; attendance logic, permissions, roles, upgrade from 1.3.1) | 12 bugs found and fixed; upgrade path 20/20 |
 | Semgrep SAST, secret scan, npm audit | no open issues in shipped code (details in the security report) |
 
 All tests run on one Windows PC with two app instances; real multi-computer Wi-Fi and the Mac build are covered by the CI workflow and need a real-world pilot. No external company has audited the app.

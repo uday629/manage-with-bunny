@@ -99,6 +99,44 @@ function Members() {
   );
 }
 
+// Role picker with "+ New position..." so a custom position can be created right where it is needed.
+function RoleSelect({ value, onChange, roles, extra }: { value: string; onChange: (id: string) => void; roles: Role[]; extra?: Role | null }) {
+  const me = useStore((s) => s.me!);
+  const [creating, setCreating] = useState(false);
+  const [name, setName] = useState('');
+  const [like, setLike] = useState(roles.find((r) => r.name === 'Employee')?.id || roles.at(-1)?.id || '');
+  const [busy, setBusy] = useState(false);
+  const create = async () => {
+    const base = me.roles.find((r) => r.id === like);
+    setBusy(true);
+    try {
+      const perms = (base?.perms || []).filter((p) => me.user.isOwner || me.perms.includes(p));
+      const r = await api<{ id: string }>('POST', '/api/roles', { name: name.trim(), rank: base ? Math.max(0, Math.min(99, base.rank)) : 20, color: base?.color || '#1F6BFF', perms });
+      await loadMe();
+      onChange(r.id); setCreating(false); setName('');
+      toast(`Position "${name.trim()}" created`, 'ok');
+    } catch (e) { toast((e as Error).message, 'err'); } finally { setBusy(false); }
+  };
+  return (
+    <div className="col" style={{ gap: 8 }}>
+      <select value={creating ? '__new__' : value} onChange={(e) => { if (e.target.value === '__new__') setCreating(true); else { setCreating(false); onChange(e.target.value); } }}>
+        {roles.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
+        {extra && !roles.some((r) => r.id === extra.id) && <option value={extra.id}>{extra.name}</option>}
+        {can('roles.manage') && <option value="__new__">+ New position (type your own)...</option>}
+      </select>
+      {creating && (
+        <div className="new-role">
+          <input value={name} onChange={(e) => setName(e.target.value)} maxLength={40} placeholder="Position name, e.g. Social Media Manager" autoFocus />
+          <label className="row" style={{ gap: 8, fontSize: 12.5 }}><span className="dim" style={{ whiteSpace: 'nowrap' }}>Same permissions as</span>
+            <select value={like} onChange={(e) => setLike(e.target.value)}>{roles.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}</select></label>
+          <div className="row"><Btn small kind="primary" loading={busy} disabled={!name.trim()} onClick={create}>Create position</Btn><Btn small kind="soft" onClick={() => setCreating(false)}>Cancel</Btn></div>
+        </div>
+      )}
+      {!can('roles.manage') && <small className="dim">Need another position? The owner can add it in Admin, Roles &amp; permissions.</small>}
+    </div>
+  );
+}
+
 function grantable(roles: Role[], myPerms: Perm[], isOwner: boolean) {
   return roles.filter((r) => !r.isOwner && (isOwner || r.perms.every((p) => myPerms.includes(p))));
 }
@@ -119,7 +157,7 @@ function ApproveModal({ p, onClose, onDone }: { p: any; onClose: () => void; onD
   return (
     <Modal title={`Approve ${p.display_name}`} onClose={onClose} footer={<><Btn onClick={onClose}>Cancel</Btn><Btn kind="primary" loading={busy} disabled={!roleId} onClick={go}>Approve</Btn></>}>
       <div className="notice"><Icon name="key" size={16} /><span>Only approve people you recognise. Confirm with {p.display_name.split(' ')[0]} that they requested to join from <b>{p.device_name || 'their device'}</b>.</span></div>
-      <Field label="Role"><select value={roleId} onChange={(e) => setRoleId(e.target.value)}>{roles.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}</select></Field>
+      <Field label="Role / position"><RoleSelect value={roleId} onChange={setRoleId} roles={roles} /></Field>
       <Field label="Reports to"><select value={mgr} onChange={(e) => setMgr(e.target.value)}><option value="">No one (top level)</option>{Object.values(users).filter((u) => u.status === 'active').map((u) => <option key={u.id} value={u.id}>{u.displayName}</option>)}</select></Field>
       <Field label="Job title (optional)"><input value={title} onChange={(e) => setTitle(e.target.value)} maxLength={60} placeholder="e.g. Video Editor" /></Field>
     </Modal>
@@ -154,7 +192,7 @@ function AddRemote({ onClose }: { onClose: () => void }) {
         <Field label="Job title (optional)"><input value={title} onChange={(e) => setTitle(e.target.value)} maxLength={60} placeholder="e.g. Remote Video Editor" /></Field>
       </div>
       <div className="form-row">
-        <Field label="Role"><select value={roleId} onChange={(e) => setRoleId(e.target.value)}>{roles.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}</select></Field>
+        <Field label="Role / position"><RoleSelect value={roleId} onChange={setRoleId} roles={roles} /></Field>
         <Field label="Reports to"><select value={mgr} onChange={(e) => setMgr(e.target.value)}><option value="">No one (top level)</option>{Object.values(users).filter((u) => u.status === 'active').map((u) => <option key={u.id} value={u.id}>{u.displayName}</option>)}</select></Field>
       </div>
       <Field label="Caretaker (keeps this profile updated)" hint="Usually their team leader or manager. They see the profile's tasks and can submit work for them.">
@@ -206,7 +244,7 @@ function EditMember({ u, onClose }: { u: User; onClose: () => void }) {
   return (
     <Modal title={`Manage ${u.displayName}`} onClose={onClose} wide footer={<><Btn onClick={onClose}>Close</Btn><Btn kind="primary" loading={busy} onClick={save}>Save changes</Btn></>}>
       <div className="form-row">
-        <Field label="Role">{u.isOwner ? <input value="Owner" disabled /> : <select value={roleId} onChange={(e) => setRoleId(e.target.value)}>{roles.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}{!roles.some((r) => r.id === roleId) && <option value={roleId}>{me.roles.find((r) => r.id === roleId)?.name || 'None'}</option>}</select>}</Field>
+        <Field label="Role / position">{u.isOwner ? <input value="Owner" disabled /> : <RoleSelect value={roleId} onChange={setRoleId} roles={roles} extra={me.roles.find((r) => r.id === roleId) || null} />}</Field>
         <Field label="Reports to"><select value={mgr} onChange={(e) => setMgr(e.target.value)}><option value="">No one (top level)</option>{Object.values(users).filter((x) => x.id !== u.id && x.status === 'active').map((x) => <option key={x.id} value={x.id}>{x.displayName}</option>)}</select></Field>
       </div>
       <Field label="Job title"><input value={title} onChange={(e) => setTitle(e.target.value)} maxLength={60} /></Field>

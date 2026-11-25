@@ -41,7 +41,7 @@ let readme = fixVersion(fs.readFileSync(path.join(root, 'README.html'), 'utf8'))
 readme = readme.replace(/<a class="btn primary" href="[^"]*">Download everything <small>\.zip<\/small><\/a>/, '<a class="btn primary" href="#download">Install now</a>');
 fs.writeFileSync(path.join(out, 'README.html'), readme);
 fs.writeFileSync(path.join(out, 'UI.html'), fixVersion(fs.readFileSync(path.join(root, 'UI.html'), 'utf8')).replace(/href="https:\/\/github\.com\/[^"]*releases\/latest"/g, 'href="README.html#download"'));
-fs.copyFileSync(path.join(root, 'SECURITY_REPORT.md'), path.join(out, 'SECURITY_REPORT.md'));
+if (fs.existsSync(path.join(root, 'SECURITY_REPORT.md'))) fs.copyFileSync(path.join(root, 'SECURITY_REPORT.md'), path.join(out, 'SECURITY_REPORT.md'));
 fs.cpSync(path.join(root, 'assets'), path.join(out, 'assets'), { recursive: true });
 fs.cpSync(path.join(root, 'docs', 'screenshots'), path.join(out, 'docs', 'screenshots'), { recursive: true });
 fs.writeFileSync(path.join(out, 'START HERE.txt'), [

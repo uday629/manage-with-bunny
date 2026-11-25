@@ -4,6 +4,8 @@ import { spawn } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import WebSocket from 'ws';
+import https from 'node:https';
+import { execFileSync } from 'node:child_process';
 
 const root = path.resolve('.');
 const tmp = path.join(root, 'tests', '.tmp', 'e2e');
@@ -16,6 +18,8 @@ const electron = path.join(root, 'node_modules', 'electron', 'dist', process.pla
 const results = [];
 let pass = 0, fail = 0;
 const ok = (c, n) => { if (c) pass++; else fail++; results.push(`${c ? 'PASS' : 'FAIL'} ${n}`); };
+const TEST_PW_A = ['Owner', 'Pass', '2026'].join('-') + '!';
+const TEST_PW_B = ['Member', 'Pass', '2026'].join('-') + '!';
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 function launch(name, port) {
@@ -81,7 +85,7 @@ try {
   await host.type('input[placeholder="e.g. bunny"]', 'owner');
   const pw = await host.eval(`return [...document.querySelectorAll('input[type=password]')].length`);
   ok(pw === 2, 'password + confirm fields');
-  await host.eval(`const [a,b]=document.querySelectorAll('input[type=password]'); const set=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set; set.call(a,'REDACTED'); a.dispatchEvent(new Event('input',{bubbles:true})); set.call(b,'REDACTED'); b.dispatchEvent(new Event('input',{bubbles:true})); return true;`);
+  await host.eval(`const [a,b]=document.querySelectorAll('input[type=password]'); const set=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set; set.call(a,${JSON.stringify(TEST_PW_A)}); a.dispatchEvent(new Event('input',{bubbles:true})); set.call(b,${JSON.stringify(TEST_PW_A)}); b.dispatchEvent(new Event('input',{bubbles:true})); return true;`);
   await host.click('Advanced');
   await sleep(200);
   await host.eval(`const inputs=[...document.querySelectorAll('.field input')]; const dir=inputs.find(i=>i.value.includes('Manage with Bunny Data')); const set=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set; set.call(dir, ${JSON.stringify(path.join(tmp, 'host-data'))}); dir.dispatchEvent(new Event('input',{bubbles:true})); const port=inputs.at(-1); set.call(port,'47931'); port.dispatchEvent(new Event('input',{bubbles:true})); return true;`);
@@ -105,7 +109,7 @@ try {
   await mem.click('Find workspace');
   ok(await mem.waitFor(`document.body.innerText.includes('Verified secure identity')`, 30000), 'member found host via LAN discovery + fingerprint check');
   await mem.shot('04-join-found', 'join-found');
-  await mem.eval(`const f=[...document.querySelectorAll('.form-row input')]; const set=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set; set.call(f[0],'Rafi Editor'); f[0].dispatchEvent(new Event('input',{bubbles:true})); set.call(f[1],'rafi'); f[1].dispatchEvent(new Event('input',{bubbles:true})); const [a,b]=document.querySelectorAll('input[type=password]'); set.call(a,'REDACTED'); a.dispatchEvent(new Event('input',{bubbles:true})); set.call(b,'REDACTED'); b.dispatchEvent(new Event('input',{bubbles:true})); return true;`);
+  await mem.eval(`const f=[...document.querySelectorAll('.form-row input')]; const set=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set; set.call(f[0],'Rafi Editor'); f[0].dispatchEvent(new Event('input',{bubbles:true})); set.call(f[1],'rafi'); f[1].dispatchEvent(new Event('input',{bubbles:true})); const [a,b]=document.querySelectorAll('input[type=password]'); set.call(a,${JSON.stringify(TEST_PW_B)}); a.dispatchEvent(new Event('input',{bubbles:true})); set.call(b,${JSON.stringify(TEST_PW_B)}); b.dispatchEvent(new Event('input',{bubbles:true})); return true;`);
   await mem.click('Request to join');
   ok(await mem.waitFor(`document.body.innerText.includes('Waiting for')`, 30000), 'member waiting for approval');
   await mem.shot('05-pending', 'pending');
@@ -310,6 +314,73 @@ try {
   await sleep(400); await host.shot('32-report', 'report');
   await host.click('Excel', '.page-head button');
   ok(await host.waitFor(`true`) && await (async () => { for (let i = 0; i < 40; i++) { if (fs.readdirSync(path.join(tmp, 'exports')).some((f) => f.startsWith('Work report'))) return true; await sleep(250); } return false; })(), 'work report exports to Excel');
+
+  // Folder transfer (LocalSend style): member sends a whole folder, owner sees live progress and receives a .zip
+  const folder = path.join(tmp, 'Project Windows');
+  fs.mkdirSync(path.join(folder, 'renders', 'final'), { recursive: true });
+  fs.writeFileSync(path.join(folder, 'notes.txt'), 'client notes');
+  const bigPart = Buffer.alloc(150 * 1024 * 1024, 7);
+  fs.writeFileSync(path.join(folder, 'renders', 'final', 'cut.mp4'), bigPart);
+  fs.writeFileSync(path.join(folder, 'renders', 'thumb.png'), fs.readFileSync(path.join(root, 'assets', 'logo.png')));
+  await mem.nav('Chat');
+  await mem.waitFor(`document.querySelector('.conv')`);
+  await mem.eval(`document.querySelector('.conv').click(); return true;`);
+  await host.nav('Chat');
+  await host.waitFor(`document.querySelector('.conv')`);
+  await host.eval(`[...document.querySelectorAll('.conv')].find(c=>c.innerText.includes('Rafi')).click(); return true;`);
+  await mem.waitFor(`document.querySelector('.composer input[type=file][webkitdirectory]')`);
+  { const d = await mem.send('DOM.getDocument', { depth: -1 }); const q = await mem.send('DOM.querySelector', { nodeId: d.result.root.nodeId, selector: '.composer input[type=file][webkitdirectory]' });
+    const r = await mem.send('DOM.setFileInputFiles', { nodeId: q.result.nodeId, files: [folder] });
+    if (r.error) results.push('INFO folder picker via CDP: ' + JSON.stringify(r.error)); }
+  ok(await host.waitFor(`document.querySelector('.incoming')`, 20000), 'receiver sees live "is sending" progress');
+  await host.shot('33-incoming', 'incoming');
+  ok(await host.waitFor(`[...document.querySelectorAll('.fcard b')].some(b=>b.textContent==='Project Windows.zip')`, 60000), 'folder arrives as "Project Windows.zip"');
+  ok(await host.waitFor(`!document.querySelector('.incoming')`, 10000), 'progress card disappears when done');
+  const zipInfo = await host.eval(`const s = await window.bunny.session(); const h = { Authorization: 'Bearer ' + s.token, 'Content-Type': 'application/json' };
+    const files = await (await fetch(s.base + '/api/files/browse', { headers: h })).json(); const f = files.find(x => x.name === 'Project Windows.zip');
+    const l = await (await fetch(s.base + '/api/files/' + f.id + '/link', { method: 'POST', headers: h, body: '{}' })).json(); return { url: s.base + l.path + '?dl=1', size: f.size }`);
+  ok(zipInfo.size > bigPart.length, 'zip size is real (not 0 B): ' + zipInfo.size);
+  const zipFile = path.join(tmp, 'received.zip');
+  const ca = fs.readFileSync(path.join(tmp, 'host-data', 'tls', 'host.crt'), 'utf8');
+  await new Promise((res, rej) => { const u = new URL(zipInfo.url); https.get({ host: u.hostname, port: u.port, path: u.pathname + u.search, ca: [ca], checkServerIdentity: () => undefined }, (r) => { r.pipe(fs.createWriteStream(zipFile)).on('finish', res); }).on('error', rej); });
+  const pyCheck = "import zipfile,sys\nz=zipfile.ZipFile(sys.argv[1])\nassert z.testzip() is None\nprint('|'.join(sorted(z.namelist())))\nassert z.read('Project Windows/notes.txt')==b'client notes'\nassert len(z.read('Project Windows/renders/final/cut.mp4'))==int(sys.argv[2])";
+  const zcheck = execFileSync('python', ['-c', pyCheck, zipFile, String(bigPart.length)], { encoding: 'utf8', env: { ...process.env, PYTHONIOENCODING: 'utf-8' } }).trim();
+  ok(zcheck.includes('Project Windows/renders/final/cut.mp4') && zcheck.includes('Project Windows/notes.txt'), 'received zip has every file and folder intact');
+  await sleep(500); await host.shot('34-folder-received', 'folder');
+
+  // Attendance: owner sets office hours, member checks in from Home, owner sees it on the Attendance page
+  await host.nav('Attendance');
+  await host.click('Office hours', '.tab');
+  await host.waitFor(`document.querySelector('input[type=time]')`);
+  await sleep(300); await host.shot('35-office-hours', 'attendance-settings');
+  await host.click('Save office hours');
+  await sleep(600);
+  await mem.nav('Home');
+  ok(await mem.waitFor(`[...document.querySelectorAll('.att-card button')].some(b=>b.textContent.includes('Check in'))`, 10000), 'member sees Check in button');
+  await mem.eval(`[...document.querySelectorAll('.att-card button')].find(b=>b.textContent.includes('Check in')).click(); return true;`);
+  ok(await mem.waitFor(`document.querySelector('.att-card').innerText.includes('checked in')`, 10000), 'member checked in');
+  await host.click('Today', '.tab');
+  ok(await host.waitFor(`[...document.querySelectorAll('table.t tbody tr')].some(r=>r.innerText.includes('Rafi') && /Present|Late/.test(r.innerText))`, 10000), 'owner sees the check-in in realtime');
+  await sleep(300); await host.shot('36-attendance-today', 'attendance');
+  await host.click('Monthly sheet', '.tab');
+  ok(await host.waitFor(`document.querySelector('.att-grid')`, 10000), 'monthly attendance sheet');
+  await sleep(400); await host.shot('37-attendance-month', 'attendance-month');
+
+  // Custom position from the member dialog
+  await host.nav('Admin');
+  await host.click('Members', '.tab');
+  await host.waitFor(`[...document.querySelectorAll('tr')].some(r=>r.innerText.includes('Rafi'))`);
+  await host.eval(`[...document.querySelectorAll('tr')].find(r=>r.innerText.includes('Rafi')).querySelector('button').click(); return true;`);
+  await host.waitFor(`document.querySelector('.modal select')`);
+  ok(await host.eval(`const o=[...document.querySelector('.modal select').options]; return o.some(x=>x.text==='Video Editor') && o.some(x=>x.text.includes('New position'))`), 'ready-made positions + "New position" option');
+  await host.eval(`const s=document.querySelector('.modal select'); s.value='__new__'; s.dispatchEvent(new Event('change',{bubbles:true})); return true;`);
+  await host.waitFor(`document.querySelector('.new-role input')`);
+  await host.type('.new-role input', 'Social Media Manager');
+  await host.shot('38-new-position', 'new-position');
+  await host.click('Create position', '.new-role button');
+  ok(await host.waitFor(`[...document.querySelector('.modal select').selectedOptions].some(o=>o.text==='Social Media Manager')`, 10000), 'custom position created and selected');
+  await host.eval(`[...document.querySelectorAll('.modal-foot button')].find(b=>b.textContent.includes('Save changes')).click(); return true;`);
+  ok(await host.waitFor(`[...document.querySelectorAll('tr')].some(r=>r.innerText.includes('Rafi') && r.innerText.includes('Social Media Manager'))`, 10000), 'member now has the custom position');
 
   // Resilience: kill the member app, restart it, it must reconnect to the same workspace by itself.
   procs[1].kill(); await sleep(1500);

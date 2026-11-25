@@ -113,7 +113,7 @@ input[type=checkbox] { accent-color: var(--blue); width: 16px; height: 16px; }
 .modal-foot { display: flex; justify-content: flex-end; gap: 10px; padding: 14px 20px; border-top: 1px solid var(--line); }
 .confirm-text { color: var(--mute); }
 @keyframes fade { from { opacity: 0; } } @keyframes pop { from { opacity: 0; transform: translateY(8px) scale(.98); } }
-.toasts { position: fixed; left: 50%; transform: translateX(-50%); bottom: 24px; align-items: center; display: flex; flex-direction: column; gap: 8px; z-index: 60; }
+.toasts { position: fixed; left: 50%; transform: translateX(-50%); bottom: 104px; align-items: center; display: flex; flex-direction: column; gap: 8px; z-index: 60; }
 .toast { display: flex; align-items: center; gap: 10px; max-width: 380px; padding: 11px 14px; border-radius: 12px; background: var(--bg3); border: 1px solid var(--line2); box-shadow: 0 12px 40px -10px rgba(0,0,0,.7); animation: pop .2s var(--ease); cursor: pointer; }
 .toast-ok { border-color: rgba(43,212,136,.35); } .toast-ok svg { color: var(--green); }
 .toast-err { border-color: rgba(255,31,86,.4); } .toast-err svg { color: var(--red); }
@@ -379,3 +379,32 @@ table.t td input, table.t td select { padding: 6px 8px; border-radius: 8px; }
 .photo-stage img { position: absolute; max-width: none; pointer-events: none; }
 .photo-mask { position: absolute; inset: 0; border-radius: 50%; box-shadow: 0 0 0 999px rgba(0,0,0,.72); border: 2px solid rgba(255,255,255,.7); pointer-events: none; }
 .report td { font-size: 12.5px; }
+
+/* ---------- incoming transfers ---------- */
+.incoming-list { display: flex; flex-direction: column; gap: 6px; padding: 0 20px; }
+.incoming { display: flex; align-items: center; gap: 10px; font-size: 12.5px; padding: 8px 12px; border-radius: 12px; background: rgba(31,107,255,.08); border: 1px solid rgba(31,107,255,.3); }
+.incoming .progress { width: 160px; flex: none; }
+
+/* ---------- attendance ---------- */
+.att-card .att-big { width: 46px; height: 46px; border-radius: 14px; display: grid; place-items: center; background: var(--card3); flex: none; }
+.att-big.ok { background: rgba(43,212,136,.15); color: var(--green); } .att-big.warn { background: rgba(255,197,61,.15); color: var(--yellow); }
+.att-big.bad { background: rgba(255,31,86,.15); color: #FF6B8E; } .att-big.pend { background: rgba(31,107,255,.15); color: #7FA8FF; }
+.att-pill { display: inline-flex; padding: 2px 10px; border-radius: 20px; font-size: 12px; font-weight: 700; background: var(--card2); color: var(--mute); }
+.att-pill.ok, .att-cell.ok { background: rgba(43,212,136,.16); color: var(--green); }
+.att-pill.warn, .att-cell.warn { background: rgba(255,197,61,.16); color: var(--yellow); }
+.att-pill.bad, .att-cell.bad { background: rgba(255,31,86,.16); color: #FF6B8E; }
+.att-pill.leave, .att-cell.leave { background: rgba(31,107,255,.16); color: #7FA8FF; }
+.att-pill.half, .att-cell.half { background: rgba(17,169,201,.16); color: #5FD3EC; }
+.att-pill.hol, .att-cell.hol { background: rgba(255,255,255,.08); color: var(--mute); }
+.att-pill.pend, .att-cell.pend { background: rgba(255,255,255,.05); color: var(--dim); }
+.att-cell { width: 26px; height: 24px; border-radius: 6px; border: 0; font-size: 10.5px; font-weight: 800; display: inline-grid; place-items: center; background: transparent; color: var(--faint); cursor: pointer; padding: 0; }
+.att-cell:disabled { cursor: default; }
+.att-cell.off { color: var(--faint); }
+.att-grid th, .att-grid td.att-td { padding: 4px 2px; text-align: center; font-size: 11px; }
+.att-grid th small { color: var(--dim); font-weight: 500; }
+.att-grid th.dimcol { color: var(--faint); }
+.att-legend { display: flex; flex-wrap: wrap; gap: 10px; font-size: 11.5px; color: var(--dim); }
+.att-legend span { display: inline-flex; align-items: center; gap: 4px; } .att-legend .att-cell { cursor: default; width: 22px; height: 20px; }
+.day-chip { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 10px; border: 1px solid var(--line2); cursor: pointer; font-size: 13px; }
+.day-chip.on { border-color: rgba(31,107,255,.6); background: rgba(31,107,255,.1); }
+.new-role { display: flex; flex-direction: column; gap: 8px; padding: 10px; border-radius: 12px; border: 1px dashed rgba(31,107,255,.5); background: rgba(31,107,255,.05); }

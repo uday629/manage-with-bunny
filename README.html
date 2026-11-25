@@ -94,7 +94,7 @@ footer img { width: 54px; height: 54px; margin-bottom: 10px; }
       <a class="btn" href="#download">How to install</a>
       <a class="btn" href="UI.html">See the app</a>
     </div>
-    <p style="margin-top:22px;font-size:14px">Version 1.3.1 · Made by <b style="color:#fff">Bunnys Framelab</b> · <a href="https://framelabmedia.odoo.com/">framelabmedia.odoo.com</a> · <a href="https://www.instagram.com/bunnysframelab/">@bunnysframelab</a></p>
+    <p style="margin-top:22px;font-size:14px">Version 1.4.0 · Made by <b style="color:#fff">Bunnys Framelab</b> · <a href="https://framelabmedia.odoo.com/">framelabmedia.odoo.com</a> · <a href="https://www.instagram.com/bunnysframelab/">@bunnysframelab</a></p>
   </div>
 </header>
 
@@ -106,7 +106,7 @@ footer img { width: 54px; height: 54px; margin-bottom: 10px; }
     <div class="card"><div class="ic">1</div><h3>Chat &amp; voice</h3><p>Direct messages (end-to-end encrypted), group chats, voice messages, replies, search, seen / not seen ticks, typing indicator.</p></div>
     <div class="card"><div class="ic">2</div><h3>Files at Wi-Fi speed</h3><p>Send videos and huge files like a local-send app. Uploads resume after a drop, identical files are stored once, versions are kept.</p></div>
     <div class="card"><div class="ic">3</div><h3>Task pipeline</h3><p>Owner to managers to team leaders to employees and back up: assign, delegate, submit with files, request changes, approve.</p></div>
-    <div class="card"><div class="ic">4</div><h3>Team chart</h3><p>A tree of who works under whom. Each person sees their own part; the owner sees everything.</p></div>
+    <div class="card"><div class="ic">4</div><h3>Team chart &amp; attendance</h3><p>A tree of who works under whom, plus office hours, check-in, late and absent tracking with a monthly attendance sheet.</p></div>
     <div class="card"><div class="ic">5</div><h3>Work report &amp; records</h3><p>One sheet with every task and daily update for any period (today to a year, or custom): who, for whom, which client, hours, on time or late, quality, links and files. Plus private sheets. Export to Excel or PDF.</p></div>
     <div class="card"><div class="ic">6</div><h3>Performance</h3><p>Monthly scores, on-time rate, overdue work, hours logged, 12-month history and manager reviews.</p></div>
   </div>
@@ -115,15 +115,15 @@ footer img { width: 54px; height: 54px; margin-bottom: 10px; }
 <section id="download"><div class="wrap">
   <span class="mono">Download &amp; install</span>
   <h2>Install in <span class="gr">two clicks</span></h2>
-  <p style="max-width:780px">Download <b style="color:#fff">Manage-with-Bunny-1.3.1-Complete.zip</b> from the <a href="https://github.com/uday629/manage-with-bunny/releases/latest">Releases page</a> (one file with everything), right-click it and choose <b style="color:#fff">Extract All</b>. Inside you find:</p>
+  <p style="max-width:780px">Download <b style="color:#fff">Manage-with-Bunny-1.4.0-Complete.zip</b> from the <a href="https://github.com/uday629/manage-with-bunny/releases/latest">Releases page</a> (one file with everything), right-click it and choose <b style="color:#fff">Extract All</b>. Inside you find:</p>
   <div class="tablewrap" style="margin-bottom:22px"><table>
     <tr><th>In the ZIP</th><th>What it is</th></tr>
-    <tr><td><code>Windows/Manage-with-Bunny-Setup-1.3.1.exe</code></td><td>Installer for Windows 10 / 11 (64-bit)</td></tr>
+    <tr><td><code>Windows/Manage-with-Bunny-Setup-1.4.0.exe</code></td><td>Installer for Windows 10 / 11 (64-bit)</td></tr>
     <tr><td><code>Mac (Apple Silicon)/...-arm64.dmg</code></td><td>Installer for Macs with M1, M2, M3 or M4 (Apple menu, About This Mac shows "Apple M...")</td></tr>
     <tr><td><code>Mac (Intel)/...-x64.dmg</code></td><td>Installer for Intel Macs (About This Mac shows "Intel")</td></tr>
     <tr><td><code>README.html</code></td><td>This guide (works without internet)</td></tr>
     <tr><td><code>UI.html</code></td><td>Tour of every screen with real screenshots</td></tr>
-    <tr><td><code>SECURITY_REPORT.md</code>, <code>SHA256SUMS.txt</code></td><td>Security details and checksums to verify the installers</td></tr>
+    <tr><td><code>SHA256SUMS.txt</code></td><td>Checksums to verify the installers</td></tr>
   </table></div>
   <h3>What you need</h3>
   <div class="grid g3" style="margin-bottom:22px">
@@ -135,7 +135,7 @@ footer img { width: 54px; height: 54px; margin-bottom: 10px; }
     <div class="card">
       <h3>Install on Windows 10 / 11</h3>
       <ol>
-        <li>Open the <code>Windows</code> folder and double-click <code>Manage-with-Bunny-Setup-1.3.1.exe</code>.</li>
+        <li>Open the <code>Windows</code> folder and double-click <code>Manage-with-Bunny-Setup-1.4.0.exe</code>.</li>
         <li>If Windows shows <b>"Windows protected your PC"</b>: click <b>More info</b>, then <b>Run anyway</b> (the installer is not code-signed yet, see <a href="#security">why</a>).</li>
         <li>Press <b>Yes</b> on the "allow this app to make changes" prompt. It installs in a few seconds, adds a desktop and Start-menu shortcut, allows the app through Windows Firewall for your local network only, and opens.</li>
         <li>If Windows Firewall still asks, tick <b>Private networks</b> and click <b>Allow</b>.</li>
@@ -236,14 +236,16 @@ footer img { width: 54px; height: 54px; margin-bottom: 10px; }
     <tr><th style="width:170px">Feature</th><th>What it does</th><th>How it works</th></tr>
     <tr><td><b>Host</b></td><td>One computer keeps all messages, files and data for the team.</td><td>The app runs a small secure server in the background on that computer, starts with the computer and stays in the tray. Data lives in the storage folder you chose. A database backup is made every day (14 kept).</td></tr>
     <tr><td><b>Join &amp; approval</b></td><td>Lets a new person into the workspace.</td><td>They paste the invite (code + address). The app finds the host, checks its identity against the code, creates their account with their own password and waits until an admin approves it and picks their role and manager.</td></tr>
-    <tr><td><b>Roles &amp; permissions</b></td><td>Decides who can do what.</td><td>Owner, Manager, HR, Team Leader, Employee are ready; create any other position in Admin, Roles. 12 permissions (approve people, manage members, see everything, message anyone, assign to anyone, storage, security log...). Nobody can give more power than they have; only the owner controls the owner account.</td></tr>
+    <tr><td><b>Roles &amp; permissions</b></td><td>Decides who can do what.</td><td>Ready-made positions: Owner, Business Partner, Director, Manager, HR, Sales Manager, Production Manager, Marketing Manager, Accountant, Team Leader, Lead Generator, Video Editor, Graphic Designer, Content Writer, Employee, Intern, Freelancer. Need another? Choose <b>+ New position (type your own)</b> in any role list (approve, manage member, remote profile) or Admin, Roles. 13 permissions (approve people, manage members, see everything, message anyone, assign to anyone, storage, security log...). Nobody can give more power than they have; only the owner controls the owner account.</td></tr>
     <tr><td><b>Team chart</b></td><td>Shows who works under whom.</td><td>Built from "Reports to" on each member. Employees see their own chain and team; people with "see the full chart" see everyone. Click a person for their profile, work log and performance.</td></tr>
     <tr><td><b>Direct messages</b></td><td>Private one-to-one chat.</td><td>End-to-end encrypted on your computer before sending; the host stores only scrambled text. Employees can message their manager, teammates and people under them; managers and the owner can message anyone. The key icon shows a safety code you can compare in person.</td></tr>
     <tr><td><b>Group chats</b></td><td>Team or project conversations.</td><td>Anyone with "create groups" makes a group (or "Add my whole team" in one click). Group admins rename, add and remove people. Messages are protected by access control on the host.</td></tr>
     <tr><td><b>Voice messages</b></td><td>Speak instead of typing.</td><td>Click the microphone (when the text box is empty), talk up to 10 minutes, click <i>Send voice</i>. It plays inline with a progress wave.</td></tr>
     <tr><td><b>Seen / not seen</b></td><td>Know if your message was read.</td><td>Clock = sending, one grey tick = sent, two blue ticks = seen. Under your last message: "Seen", "Seen by A, B" or "Not seen yet". A message counts as seen when the other person has the chat open on screen.</td></tr>
     <tr><td><b>Search</b></td><td>Find any message.</td><td>Type at least 2 letters in the chat search box (Bengali or English, part of a word works). Group messages are searched on the host; private messages are searched on your own computer because only you can read them. Click a result to jump to it.</td></tr>
-    <tr><td><b>Files &amp; big videos</b></td><td>Send files of any size like a local-send app.</td><td>Drag into a chat, paste, or use the paper clip. The file goes to the host in pieces at full network speed; if Wi-Fi drops it continues where it stopped. Videos, images and audio play inline; Download saves a copy. Same name again = new version. Identical files are stored once.</td></tr>
+    <tr><td><b>Files &amp; big videos</b></td><td>Send files of any size like LocalSend, all inside your own network.</td><td>Drag into a chat, paste, or use the paper clip. The file is stored on the host in pieces at full network speed; if Wi-Fi drops it continues where it stopped. Everyone in that chat sees a live "X is sending..." progress bar, then can preview videos, images and audio right in the chat or click Download to save a copy on their own computer. Same name again = new version. Identical files are stored once.</td></tr>
+    <tr><td><b>Folders</b></td><td>Send a whole folder with everything inside.</td><td>Drag a folder into the chat, or click the folder button next to the paper clip. The app packs it into one <code>.zip</code> (no compression, so it is fast and the original quality is kept), shows "Packing folder %", then sends it. The receiver downloads the .zip and opens it with a double-click; all subfolders and files are inside.</td></tr>
+    <tr><td><b>Attendance</b></td><td>Know who came to work, who was late and who was absent.</td><td>The boss / HR sets office start and end time, "late after" minutes, working days and holidays (Attendance, Office hours). Everyone presses <b>Check in</b> on Home when they arrive (time comes from the host computer, so it cannot be faked) and <b>Check out</b> when leaving. Arriving after start + late minutes = <i>Late</i>. A working day with no check-in becomes <i>Absent</i> after office end. HR can mark Leave, Half day, Holiday or correct any day. The Monthly sheet shows every person and day (P, L, A, LV, ½, H) with totals and attendance %, and exports to Excel / PDF. Managers see their own team; the boss and HR see everyone.</td></tr>
     <tr><td><b>Tasks</b></td><td>Hand out work and track it to the end.</td><td>New task: title, details, client, links, due date, priority, person. The person clicks Start, attaches the result, enters hours spent and Submits. The giver Approves (with optional 1-5 quality stars) or Requests changes with a note. Delegate splits it further down the chain. Everything is recorded in Activity.</td></tr>
     <tr><td><b>Work report</b></td><td>One sheet of all work for any period.</td><td>Pick Today, 2, 3, 7, 30, 90 days, 6 months, 1 year or Custom; filter by person, client or type. Each row: date, person, work, who gave it, client, status, hours (or start-to-finish time), performance (on time / late / revisions / quality) and Drive links and files. Excel and PDF export.</td></tr>
     <tr><td><b>Daily work log</b></td><td>Record daily progress and hours.</td><td>Team chart, click a person, Work log (or the Home card for remote teammates): date, hours, what was done, client, links. Counted in Performance and the Work report.</td></tr>
@@ -301,15 +303,15 @@ footer img { width: 54px; height: 54px; margin-bottom: 10px; }
   <h3 style="margin-top:28px">Tests that were actually run</h3>
   <div class="tablewrap"><table>
     <tr><th>Test</th><th>Result</th></tr>
-    <tr><td>API and security tests against a real host</td><td><span class="pill">147 / 147 passed</span></td></tr>
+    <tr><td>API and security tests against a real host</td><td><span class="pill">179 / 179 passed</span></td></tr>
     <tr><td>Internal penetration test (56 attacks: auth bypass, IDOR, traversal, smuggling, TLS downgrade, races...)</td><td><span class="pill">56 / 56 blocked</span></td></tr>
-    <tr><td>UI end-to-end with two real apps (setup, join, chat, voice, search, seen, files, tasks, remote, export, network check, restarts)</td><td><span class="pill">52 / 52 passed</span></td></tr>
+    <tr><td>UI end-to-end with two real apps (setup, join, chat, voice, search, seen, files, tasks, remote, export, network check, restarts)</td><td><span class="pill">64 / 64 passed</span></td></tr>
     <tr><td>15 people at once for 60 s plus five 40 MB uploads</td><td><span class="pill">0 errors, every message delivered, median 1 ms</span></td></tr>
     <tr><td>12 months of data: 300,000 messages, 25,000 tasks, 20,000 files</td><td><span class="pill">every screen under 200 ms</span></td></tr>
     <tr><td>Real 2.9 GiB AI model file sent through the app</td><td><span class="pill">122 MB/s up, 306 MB/s down, byte-identical</span></td></tr>
     <tr><td>Semgrep code scan, secret scan, dependency audit</td><td><span class="pill">no open issues in shipped code</span></td></tr>
   </table></div>
-  <p style="margin-top:12px;font-size:14px">Full details: <a href="SECURITY_REPORT.md">SECURITY_REPORT.md</a>. These are internal tests; no external company has audited the app yet.</p>
+  <p style="margin-top:12px;font-size:14px">These are internal tests (including a penetration test and two independent QA agents); no external company has audited the app yet.</p>
 </div></section>
 
 <section id="limits"><div class="wrap">
@@ -327,7 +329,9 @@ footer img { width: 54px; height: 54px; margin-bottom: 10px; }
       <li>No voice or video calls and no screen sharing.</li>
       <li>Windows and Mac only: no mobile app and no Linux build.</li>
       <li>Search in private chats covers the newest 2,000 messages of each chat.</li>
-      <li>Executable files (.exe, .bat, .msi...) are blocked by default; zip them or ask an admin. Default maximum file size 50 GB (admin can raise it).</li>
+      <li>Executable files (.exe, .bat, .msi...) are blocked by default when sent on their own; zip them or ask an admin. Default maximum file size 50 GB (admin can raise it).</li>
+      <li>Folders arrive as a .zip; the receiver extracts it (double-click) to get the folder back.</li>
+      <li>Attendance check-in needs the app and the office network; there is no GPS or fingerprint check, so someone could check in for a colleague by using their signed-in computer.</li>
       <li>Backups copy the database daily (14 kept); files are not duplicated, so copy the storage folder to another drive yourself.</li>
     </ul></div>
     <div class="card"><h3>Security</h3><ul>

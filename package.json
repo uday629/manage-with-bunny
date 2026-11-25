@@ -1,7 +1,7 @@
 {
   "name": "manage-with-bunny",
   "productName": "Manage with Bunny",
-  "version": "1.3.1",
+  "version": "1.4.0",
   "description": "Private LAN team management: chat, file transfer, tasks, org chart and performance tracking.",
   "author": {
     "name": "Bunnys Framelab",
@@ -111,7 +111,11 @@
       "artifactName": "Manage-with-Bunny-${version}-${arch}.${ext}",
       "extendInfo": {
         "NSLocalNetworkUsageDescription": "Manage with Bunny connects to your team host on this Wi-Fi network.",
-        "NSMicrophoneUsageDescription": "Manage with Bunny uses the microphone only while you record a voice message."
+        "NSMicrophoneUsageDescription": "Manage with Bunny uses the microphone only while you record a voice message.",
+        "NSDesktopFolderUsageDescription": "Manage with Bunny reads files and folders you choose to send to your team.",
+        "NSDocumentsFolderUsageDescription": "Manage with Bunny reads files and folders you choose to send to your team.",
+        "NSDownloadsFolderUsageDescription": "Manage with Bunny saves files you download from your team.",
+        "NSRemovableVolumesUsageDescription": "Manage with Bunny reads files you choose to send from external drives."
       },
       "identity": "-",
       "minimumSystemVersion": "12.0"

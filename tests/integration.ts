@@ -136,7 +136,7 @@ async function main() {
     ok((await req('PATCH', `/api/users/${zed.id}`, { title: 'Sales Lead' }, hana.token)).status === 200, 'HR can edit employee title');
     ok((await req('PATCH', `/api/users/${mia.id}`, { managerId: eli.id }, owner.token)).status === 400, 'reporting-chain cycle prevented');
     ok((await req('PATCH', `/api/roles/${roleId('Owner')}`, { name: 'Owner', perms: [] }, owner.token)).status === 403, 'owner role immutable');
-    const lr = await req('POST', '/api/roles', { name: 'Lead Generator', rank: 30, perms: ['chat.create_groups', 'not.a.perm'] }, owner.token);
+    const lr = await req('POST', '/api/roles', { name: 'Lead Gen Specialist', rank: 30, perms: ['chat.create_groups', 'not.a.perm'] }, owner.token);
     ok(lr.status === 200, 'owner creates custom role (unknown perms dropped)');
 
     // ---- directory scoping ----
@@ -360,6 +360,54 @@ async function main() {
     const act = await req('POST', '/api/auth/reset', { username: sara.username, code: src.json.code, salt: sc.salt, authKey: sc.authKey, pubkey: sc.pubkey, encPriv: sc.encPriv });
     ok(act.status === 200 && act.json.user.isRemote === false, 'remote profile activated into a real account with a reset code');
     ok((await login(sara.username, 'sara-real-password-1')).r.status === 200, 'activated account signs in');
+
+    // ---- roles: ready-made positions + custom ----
+    for (const n of ['Director', 'Sales Manager', 'Production Manager', 'Lead Generator', 'Video Editor', 'Accountant', 'Intern', 'Freelancer'])
+      ok(roles.some((r: any) => r.name === n), `ready-made position "${n}" exists`);
+    const cr = await req('POST', '/api/roles', { name: 'Social Media Manager', rank: 40, perms: ['chat.create_groups'] }, owner.token);
+    ok(cr.status === 200, 'custom position can be created');
+
+    // ---- attendance ----
+    ok((await req('PUT', '/api/attendance/settings', { start: '00:00', end: '23:59', grace: 0, days: [0, 1, 2, 3, 4, 5, 6], holidays: [] }, eli.token)).status === 403, 'employee cannot change office hours');
+    ok((await req('PUT', '/api/attendance/settings', { start: '18:00', end: '09:00', grace: 0, days: [1], holidays: [] }, owner.token)).status === 400, 'office end before start rejected');
+    const nowD = new Date(); const nowMin = nowD.getHours() * 60 + nowD.getMinutes();
+    // office started long ago (00:00) with 0 grace -> anyone checking in now (after 00:00) is late unless it is exactly midnight
+    ok((await req('PUT', '/api/attendance/settings', { start: '00:00', end: '23:59', grace: 0, days: [0, 1, 2, 3, 4, 5, 6], holidays: [{ day: '2030-01-01', name: 'Test holiday' }] }, owner.token)).status === 200, 'owner sets office hours');
+    const ci = await req('POST', '/api/attendance/check-in', {}, eli.token);
+    ok(ci.status === 200 && ci.json.status === (nowMin > 0 ? 'late' : 'present') && ci.json.checkIn, 'check-in records time from the host clock (late after start + grace)');
+    const ci2 = await req('POST', '/api/attendance/check-in', {}, eli.token);
+    ok(ci2.json.checkIn === ci.json.checkIn, 'second check-in does not change the first time');
+    ok((await req('POST', '/api/attendance/check-in', { userId: zed.id }, eli.token)).status === 403, 'cannot check in someone else');
+    ok((await req('POST', '/api/attendance/check-out', {}, zed.token)).status === 400, 'check-out needs a check-in first');
+    ok((await req('POST', '/api/attendance/check-out', {}, eli.token)).status === 200, 'check-out works');
+    const t0 = new Date(); const tday = `${t0.getFullYear()}-${String(t0.getMonth() + 1).padStart(2, '0')}-${String(t0.getDate()).padStart(2, '0')}`;
+    const y = new Date(Date.now() - 86400000); const yday = `${y.getFullYear()}-${String(y.getMonth() + 1).padStart(2, '0')}-${String(y.getDate()).padStart(2, '0')}`;
+    const sheetMia = await req('GET', `/api/attendance?from=${yday}&to=${tday}`, undefined, mia.token);
+    const eliRow = sheetMia.json.people.find((p: any) => p.userId === eli.id);
+    ok(sheetMia.status === 200 && eliRow && eliRow.cells[tday].s === ci.json.status && eliRow.cells[tday].out, 'manager sees report\'s check-in/out');
+    const zedRowOwner = (await req('GET', `/api/attendance?from=${tday}&to=${tday}`, undefined, owner.token)).json.people.find((p: any) => p.userId === zed.id);
+    ok(zedRowOwner && ['pending', 'absent'].includes(zedRowOwner.cells[tday].s), 'no check-in today shows as not-yet / absent');
+    const eliSheet = await req('GET', `/api/attendance?from=${tday}&to=${tday}`, undefined, eli.token);
+    ok(eliSheet.json.people.length === 1 && eliSheet.json.people[0].userId === eli.id, 'employee sees only own attendance');
+    ok((await req('GET', `/api/attendance?from=${tday}&to=${tday}&userId=${zed.id}`, undefined, eli.token)).status === 404, 'employee cannot read another person\'s attendance');
+    ok((await req('PUT', `/api/attendance/${zed.id}/${tday}`, { status: 'leave', note: 'sick' }, eli.token)).status === 403, 'employee cannot edit attendance');
+    ok((await req('PUT', `/api/attendance/${zed.id}/${tday}`, { status: 'leave', note: 'sick' }, hana.token)).status === 200, 'HR marks leave');
+    ok((await req('PUT', `/api/attendance/${zed.id}/${tday}`, { status: 'party' }, hana.token)).status === 400, 'invalid status rejected');
+    const zrow = (await req('GET', `/api/attendance?from=${tday}&to=${tday}&userId=${zed.id}`, undefined, owner.token)).json.people[0];
+    ok(zrow.cells[tday].s === 'leave' && zrow.cells[tday].note === 'sick', 'leave shows in the sheet');
+    const hol = (await req('GET', `/api/attendance?from=2030-01-01&to=2030-01-01`, undefined, owner.token)).json;
+    ok(hol.days[0].holiday === 'Test holiday', 'holidays are listed');
+    ok((await req('GET', `/api/attendance?from=2024-01-01&to=2026-12-31`, undefined, owner.token)).status === 400, 'range over a year rejected');
+
+    // ---- regressions from QA agent 2 ----
+    ok((await req('POST', '/api/roles', { name: '  manager ', perms: [] }, owner.token)).status === 409, 'duplicate position name rejected (case/space-insensitive)');
+    ok((await req('POST', '/api/roles', { name: 'Owner', perms: [] }, owner.token)).status === 409, '"Owner" name reserved');
+    ok((await req('GET', '/api/attendance?from=2027-02-31&to=2027-03-05', undefined, owner.token)).status === 400, 'impossible date in range rejected');
+    ok((await req('PUT', `/api/attendance/${zed.id}/2026-02-31`, { status: 'leave' }, hana.token)).status === 400, 'impossible date in edit rejected');
+    await req('PUT', `/api/attendance/${eli.id}/${tday}`, { status: 'absent', note: 'oops' }, hana.token);
+    await req('PUT', `/api/attendance/${eli.id}/${tday}`, { status: 'auto' }, hana.token);
+    const back = (await req('GET', `/api/attendance?from=${tday}&to=${tday}&userId=${eli.id}`, undefined, owner.token)).json.people[0].cells[tday];
+    ok(back.in === ci.json.checkIn && ['present', 'late'].includes(back.s), '"Automatic" keeps the real check-in time');
 
     // ---- admin / storage ----
     ok((await req('GET', '/api/admin/storage', undefined, eli.token)).status === 403, 'employee blocked from storage admin');

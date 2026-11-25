@@ -2,6 +2,7 @@
 // resumable uploads and a tiny global store.
 import { useSyncExternalStore } from 'react';
 import type { Perm } from '../shared/perms';
+import { buildStoredZip, type ZipEntry } from '../shared/zipstore';
 
 // ------------------------------------------------------------------ types
 export interface User { id: string; username: string; displayName: string; title: string; roleId: string | null; managerId: string | null; status: string; isOwner: boolean; color: string; pubkey: string; online: boolean; lastSeen: number | null; reports?: number; avatarVer?: number; isRemote?: boolean; caretakerId?: string | null; remoteNote?: string }
@@ -11,7 +12,7 @@ export interface Msg { id: number; convId: string; senderId: string | null; kind
 export interface Conv { id: string; type: 'dm' | 'group'; name: string; createdBy: string; lastMsgAt: number; unread: number; muted: boolean; isAdmin: boolean; lastReadId: number; members: string[]; last: Msg | null }
 export interface Task { client?: string; hoursSpent?: number | null; rating?: number | null; id: string; title: string; description: string; links: string[]; assignerId: string | null; assigneeId: string | null; parentId: string | null; status: string; priority: string; dueAt: number | null; createdAt: number; updatedAt: number; startedAt: number | null; submittedAt: number | null; completedAt: number | null; revisions: number; subtasks: number; files: number }
 export interface Me { user: User; perms: Perm[]; workspace: { id: string; name: string }; roles: Role[] }
-export interface Upload { id: string; name: string; size: number; sent: number; status: 'queued' | 'uploading' | 'paused' | 'done' | 'error'; error?: string; speed: number; scopeId: string }
+export interface Upload { id: string; name: string; size: number; sent: number; status: 'preparing' | 'queued' | 'uploading' | 'paused' | 'done' | 'error'; error?: string; speed: number; scopeId: string }
 export interface Toast { id: number; kind: 'ok' | 'err' | 'info'; text: string }
 export interface AppState {
   mode: 'host' | 'member' | null; version: string; platform: string; signedIn: boolean; sessionLost?: boolean; pending: boolean; online: boolean; autoStart: boolean; closeToTray: boolean;
@@ -26,13 +27,15 @@ export const bunny = (window as any).bunny as Record<string, BridgeFn> & { onEve
 export interface Store {
   app: AppState | null; conn: 'online' | 'connecting' | 'offline'; me: Me | null; users: Record<string, User>;
   convs: Conv[]; msgs: Record<string, Msg[]>; typing: Record<string, { userId: string; until: number }>; pending: number;
-  uploads: Upload[]; toasts: Toast[]; ver: { tasks: number; sheets: number; users: number; files: number; worklog: number; avatars: number }; route: string; routeArg: string | null;
+  uploads: Upload[]; toasts: Toast[]; ver: { tasks: number; sheets: number; users: number; files: number; worklog: number; avatars: number; attendance: number }; route: string; routeArg: string | null;
   downloads: Record<string, { received: number; total: number; state: string }>;
   jump: { convId: string; msgId: number } | null;
+  incoming: Record<string, Incoming>;
 }
+export interface Incoming { id: string; convId: string; userId: string; name: string; size: number; received: number; at: number }
 let state: Store = {
   app: null, conn: 'connecting', me: null, users: {}, convs: [], msgs: {}, typing: {}, pending: 0, uploads: [], toasts: [],
-  ver: { tasks: 0, sheets: 0, users: 0, files: 0, worklog: 0, avatars: 0 }, route: 'home', routeArg: null, downloads: {}, jump: null,
+  ver: { tasks: 0, sheets: 0, users: 0, files: 0, worklog: 0, avatars: 0, attendance: 0 }, route: 'home', routeArg: null, downloads: {}, jump: null, incoming: {},
 };
 const subs = new Set<() => void>();
 export const getState = () => state;
@@ -72,7 +75,7 @@ async function reconnectBase() {
 }
 export function clearSession() { token = null; base = null; ws?.close(); ws = null; wsStop = true; }
 
-export async function api<T = any>(method: string, path: string, body?: unknown, opts: { retry?: boolean; raw?: Blob; signal?: AbortSignal } = {}): Promise<T> {
+export async function api<T = any>(method: string, path: string, body?: unknown, opts: { retry?: boolean; raw?: Blob | ArrayBuffer; signal?: AbortSignal } = {}): Promise<T> {
   const retry = opts.retry ?? method === 'GET';
   for (let attempt = 0; attempt < 3; attempt++) {
     if (!base) await reconnectBase();
@@ -394,8 +397,17 @@ async function runUpload(q: (typeof queue)[number]) {
     let t0 = performance.now(), b0 = 0;
     while (off < q.file.size) {
       if (!getState().uploads.find((u) => u.id === id)) return; // cancelled
+      // Read the piece first: a read failure is a local problem (folder, missing permission), not a network one.
+      let piece: ArrayBuffer;
+      try { piece = await q.file.slice(off, off + init.chunk).arrayBuffer(); }
+      catch {
+        const mac = navigator.userAgent.includes('Mac');
+        throw new ApiError(-1, q.file.size === 0 || (off === 0 && mac)
+          ? `Could not read "${q.file.name}". If it is a folder, drag it into the chat or use the folder button (folders are sent as a .zip).${mac ? ' On a Mac, also allow Manage with Bunny in System Settings > Privacy & Security > Files and Folders.' : ''}`
+          : `"${q.file.name}" changed or was moved on disk after you picked it. Pick it again to send the current version.`);
+      }
       try {
-        const r = await api<{ received: number }>('PUT', `/api/uploads/${init.id}?offset=${off}`, undefined, { raw: q.file.slice(off, off + init.chunk), retry: false });
+        const r = await api<{ received: number }>('PUT', `/api/uploads/${init.id}?offset=${off}`, undefined, { raw: piece, retry: false });
         off = r.received; fails = 0;
         const dt = (performance.now() - t0) / 1000;
         if (dt > 0.7) { patchUpload(id, { speed: (off - b0) / dt }); t0 = performance.now(); b0 = off; }
@@ -417,9 +429,73 @@ async function runUpload(q: (typeof queue)[number]) {
     setTimeout(() => setState((s) => ({ uploads: s.uploads.filter((u) => u.id !== id) })), 2500);
   } catch (e) {
     patchUpload(id, { status: 'error', error: (e as Error).message });
+    if (q.serverId) { const sid = q.serverId; q.serverId = undefined; api('DELETE', `/api/uploads/${sid}`).catch(() => {}); }
   }
 }
-export function retryUpload(id: string) { patchUpload(id, { status: 'queued', sent: 0, error: undefined }); pump(); }
+// ---- folders: packed into an uncompressed .zip (fast, keeps the folder structure), then uploaded like any file
+export interface FolderPick { name: string; entries: ZipEntry[] }
+async function readDir(dir: any, prefix: string, out: ZipEntry[]) {
+  const reader = dir.createReader();
+  for (;;) {
+    const batch: any[] = await new Promise((res, rej) => reader.readEntries(res, rej));
+    if (!batch.length) break;
+    for (const en of batch) {
+      const path = `${prefix}/${en.name}`;
+      if (en.isDirectory) { out.push({ path, file: new Blob([]), dir: true }); await readDir(en, path, out); }
+      else { const f: File = await new Promise((res, rej) => en.file(res, rej)); out.push({ path, file: f, mtime: f.lastModified, pickedSize: f.size }); }
+    }
+  }
+}
+/** Splits a drop into plain files and folders. Must be called synchronously inside the drop handler. */
+export function collectDrop(dt: DataTransfer): Promise<{ files: File[]; folders: FolderPick[] }> {
+  const items = [...dt.items].filter((i) => i.kind === 'file');
+  const picked = items.map((i) => ({ entry: (i as any).webkitGetAsEntry?.() ?? null, file: i.getAsFile() }));
+  return (async () => {
+    const files: File[] = []; const folders: FolderPick[] = [];
+    for (const p of picked) {
+      if (p.entry?.isDirectory) { const entries: ZipEntry[] = [{ path: p.entry.name, file: new Blob([]), dir: true }]; await readDir(p.entry, p.entry.name, entries); folders.push({ name: p.entry.name, entries }); }
+      else if (p.file) files.push(p.file);
+    }
+    return { files, folders };
+  })();
+}
+/** Files chosen with a folder picker (webkitdirectory) grouped by their top folder. */
+export function foldersFromPicker(list: File[]): FolderPick[] {
+  const map = new Map<string, ZipEntry[]>();
+  for (const f of list) {
+    const rel = (f as any).webkitRelativePath || f.name;
+    const top = rel.split('/')[0];
+    if (!map.has(top)) map.set(top, []);
+    map.get(top)!.push({ path: rel, file: f, mtime: f.lastModified, pickedSize: f.size });
+  }
+  return [...map].map(([name, entries]) => ({ name, entries }));
+}
+export function uploadFolder(folder: FolderPick, scope: 'conv' | 'task', scopeId: string, onDone: (f: FileInfo) => void) {
+  const total = folder.entries.reduce((a, e) => a + (e.dir ? 0 : e.file.size), 0);
+  const up: Upload = { id: rid(), name: `${folder.name}.zip`, size: total, sent: 0, status: 'preparing', speed: 0, scopeId };
+  setState((s) => ({ uploads: [...s.uploads, up] }));
+  let last = 0;
+  buildStoredZip(folder.entries, (done) => { if (performance.now() - last > 200) { last = performance.now(); patchUpload(up.id, { sent: done }); } })
+    .then((blob) => {
+      if (!getState().uploads.find((u) => u.id === up.id)) return; // cancelled while packing
+      const file = new File([blob], up.name, { type: 'application/zip' });
+      queue.push({ up: { ...up, size: file.size }, file, scope, onDone });
+      patchUpload(up.id, { status: 'queued', size: file.size, sent: 0 });
+      pump();
+    })
+    .catch((err) => {
+      repack.set(up.id, () => { setState((s) => ({ uploads: s.uploads.filter((u) => u.id !== up.id) })); uploadFolder(folder, scope, scopeId, onDone); });
+      patchUpload(up.id, { status: 'error', error: (err as Error)?.message || `Could not read the folder "${folder.name}".` });
+    });
+}
+const repack = new Map<string, () => void>();
+
+export function retryUpload(id: string) {
+  const again = repack.get(id);
+  if (again) { repack.delete(id); again(); return; }
+  if (!queue.some((q) => q.up.id === id)) { setState((s) => ({ uploads: s.uploads.filter((u) => u.id !== id) })); return; }
+  patchUpload(id, { status: 'queued', sent: 0, error: undefined }); pump();
+}
 
 // ------------------------------------------------------------------ formatting
 export const fmtBytes = (n: number) => { if (!n) return '0 B'; const u = ['B', 'KB', 'MB', 'GB', 'TB']; const i = Math.min(4, Math.floor(Math.log(n) / Math.log(1024))); return `${(n / 1024 ** i).toFixed(i ? 1 : 0)} ${u[i]}`; };

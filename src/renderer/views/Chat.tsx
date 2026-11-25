@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { Hit } from '../api';
-import { api, bunny, useStore, getState, setState, navigate, loadMessages, loadAround, searchMessages, isVoice, loadConvs, sendMessage, sendTyping, retryFailed, uploadFiles, dismissUpload, retryUpload, fileUrl, downloadFile, peerOf, textOf, userName, fmtTime, fmtBytes, fmtDate, fmtAgo, can, toast, type Conv, type Msg, type FileInfo, type User } from '../api';
+import { api, bunny, useStore, getState, setState, navigate, loadMessages, loadAround, searchMessages, isVoice, loadConvs, collectDrop, foldersFromPicker, uploadFolder, type FolderPick, sendMessage, sendTyping, retryFailed, uploadFiles, dismissUpload, retryUpload, fileUrl, downloadFile, peerOf, textOf, userName, fmtTime, fmtBytes, fmtDate, fmtAgo, can, toast, type Conv, type Msg, type FileInfo, type User } from '../api';
 import { Avatar, Btn, Empty, Field, Icon, Modal, Progress, RichText, Spinner, UserPicker, confirmDialog } from '../ui';
 
 export function Chat() {
@@ -210,6 +210,14 @@ function Thread({ conv }: { conv: Conv }) {
     uploadFiles(files, 'conv', conv.id, (f) => { void sendMessage(conv.id, '', null, f.id); });
     stick.current = true;
   };
+  const onFolders = (folders: FolderPick[]) => {
+    for (const f of folders) uploadFolder(f, 'conv', conv.id, (file) => { void sendMessage(conv.id, '', null, file.id); });
+    if (folders.length) stick.current = true;
+  };
+  const incomingAll = useStore((s) => s.incoming);
+  const [, setTick] = useState(0);
+  useEffect(() => { const t = setInterval(() => setTick((x) => x + 1), 15000); return () => clearInterval(t); }, []);
+  const incoming = Object.values(incomingAll).filter((x) => x.convId === conv.id && Date.now() - x.at < 90000);
 
   const others = conv.members.filter((x) => x !== me);
   const seenBy = (id: number) => others.filter((x) => (reads[x] || 0) >= id);
@@ -218,7 +226,7 @@ function Thread({ conv }: { conv: Conv }) {
 
   return (
     <div className="thread" onDragOver={(e) => { if (e.dataTransfer.types.includes('Files')) { e.preventDefault(); setDrag(true); } }} onDragLeave={(e) => { if (e.currentTarget === e.target) setDrag(false); }}
-      onDrop={(e) => { e.preventDefault(); setDrag(false); onFiles([...e.dataTransfer.files]); }} style={{ position: 'relative' }}>
+      onDrop={(e) => { e.preventDefault(); setDrag(false); collectDrop(e.dataTransfer).then(({ files, folders }) => { onFiles(files); onFolders(folders); }).catch((err) => toast((err as Error).message || 'Could not read what you dropped.', 'err')); }} style={{ position: 'relative' }}>
       <div className="titlebar" />
       <div className="thread-head">
         {conv.type === 'dm' ? <Avatar user={peer} size={38} /> : <span className="group-ic">{conv.name.slice(0, 1).toUpperCase()}</span>}
@@ -262,7 +270,20 @@ function Thread({ conv }: { conv: Conv }) {
           );
         })}
       </div>
+      {incoming.length > 0 && (
+        <div className="incoming-list">
+          {incoming.map((x) => (
+            <div key={x.id} className="incoming">
+              <Avatar user={users[x.userId]} size={26} />
+              <span className="grow ellipsis"><b>{userName(x.userId).split(' ')[0]}</b> is sending <b>{x.name}</b></span>
+              <Progress value={(x.received / Math.max(1, x.size)) * 100} />
+              <span className="dim" style={{ whiteSpace: 'nowrap' }}>{fmtBytes(x.received)} / {fmtBytes(x.size)}</span>
+            </div>
+          ))}
+        </div>
+      )}
       <Composer conv={conv} reply={reply} clearReply={() => setReply(null)} editing={editing} clearEdit={() => setEditing(null)} onFiles={onFiles} peer={peer}
+        onFolders={onFolders}
         typing={typing && typing.userId !== me ? `${userName(typing.userId).split(' ')[0]} is typing...` : ''} uploads={uploads} onSent={() => { stick.current = true; }} editLast={setEditing} />
       {drag && <div className="drop-hint">Drop files to send to {title}</div>}
       {settings && (conv.type === 'dm' ? <SafetyModal peer={peer} safety={keyState?.safety || ''} onClose={() => setSettings(false)} /> : <GroupSettings conv={conv} onClose={() => setSettings(false)} />)}
@@ -391,14 +412,16 @@ function VoiceRecorder({ onDone, onCancel }: { onDone: (f: File) => void; onCanc
   );
 }
 
-function Composer({ conv, reply, clearReply, editing, clearEdit, onFiles, typing, uploads, onSent, peer, editLast }: {
-  editLast: (m: Msg) => void; conv: Conv; reply: Msg | null; clearReply: () => void; editing: Msg | null; clearEdit: () => void; onFiles: (f: File[]) => void; typing: string;
+function Composer({ conv, reply, clearReply, editing, clearEdit, onFiles, onFolders, typing, uploads, onSent, peer, editLast }: {
+  onFolders: (f: FolderPick[]) => void; editLast: (m: Msg) => void; conv: Conv; reply: Msg | null; clearReply: () => void; editing: Msg | null; clearEdit: () => void; onFiles: (f: File[]) => void; typing: string;
   uploads: ReturnType<typeof getState>['uploads']; onSent: () => void; peer: User | null;
 }) {
   const [text, setText] = useState('');
   const [recording, setRecording] = useState(false);
   const ta = useRef<HTMLTextAreaElement>(null);
   const fileInput = useRef<HTMLInputElement>(null);
+  const folderInput = useRef<HTMLInputElement>(null);
+  useEffect(() => { folderInput.current?.setAttribute('webkitdirectory', ''); }, [recording]);
   const lastTyping = useRef(0);
   const draftKey = 'draft:' + conv.id;
   useEffect(() => { try { setText(sessionStorage.getItem(draftKey) || ''); } catch { /* */ } ta.current?.focus(); }, [conv.id]);
@@ -429,7 +452,7 @@ function Composer({ conv, reply, clearReply, editing, clearEdit, onFiles, typing
               <Icon name={u.status === 'error' ? 'x' : u.status === 'done' ? 'check' : 'upload'} size={15} />
               <span className="ellipsis" style={{ maxWidth: 220 }}>{u.name}</span>
               <Progress value={(u.sent / Math.max(1, u.size)) * 100} tone={u.status === 'error' ? 'var(--red)' : undefined} />
-              <span className="dim" style={{ whiteSpace: 'nowrap' }}>{u.status === 'error' ? u.error : u.status === 'paused' ? 'Waiting for connection' : u.status === 'done' ? 'Sent' : `${fmtBytes(u.sent)} / ${fmtBytes(u.size)}${u.speed ? ` · ${fmtBytes(u.speed)}/s` : ''}`}</span>
+              <span className="dim" style={{ whiteSpace: 'nowrap' }}>{u.status === 'error' ? u.error : u.status === 'preparing' ? `Packing folder ${u.size ? Math.round((u.sent / u.size) * 100) : 100}%` : u.status === 'paused' ? 'Waiting for connection' : u.status === 'done' ? 'Sent' : `${fmtBytes(u.sent)} / ${fmtBytes(u.size)}${u.speed ? ` · ${fmtBytes(u.speed)}/s` : ''}`}</span>
               {u.status === 'error' && <button className="icon-btn" title="Retry" onClick={() => retryUpload(u.id)}><Icon name="refresh" size={14} /></button>}
               {u.status !== 'done' && <button className="icon-btn" title="Cancel" onClick={() => dismissUpload(u.id)}><Icon name="x" size={14} /></button>}
             </div>
@@ -446,6 +469,8 @@ function Composer({ conv, reply, clearReply, editing, clearEdit, onFiles, typing
       {recording ? <VoiceRecorder onDone={(f) => onFiles([f])} onCancel={() => setRecording(false)} /> : <div className="composer-box">
         <button className="icon-btn" title="Attach files" disabled={disabled} onClick={() => fileInput.current?.click()}><Icon name="clip" /></button>
         <input ref={fileInput} type="file" multiple hidden onChange={(e) => { onFiles([...(e.target.files || [])]); e.target.value = ''; }} />
+        <button className="icon-btn" title="Send a folder (packed as .zip)" disabled={disabled} onClick={() => folderInput.current?.click()}><Icon name="files" /></button>
+        <input ref={folderInput} type="file" hidden onChange={(e) => { const list = [...(e.target.files || [])]; if (!list.length) toast('That folder is empty, nothing to send.', 'info'); else onFolders(foldersFromPicker(list)); e.target.value = ''; }} />
         <textarea ref={ta} rows={1} value={text} disabled={disabled} placeholder={disabled ? 'This person is no longer active.' : conv.type === 'dm' ? 'Write an encrypted message...' : `Message ${conv.name}`} aria-label="Message"
           onChange={(e) => {
             setText(e.target.value);

@@ -269,8 +269,14 @@ export function registerUsers(r: Router) {
     assertCanGrant(u, perms);
     return { name, rank, color, perms };
   };
+  const assertUniqueRole = (name: string, exceptId?: string) => {
+    if (name.trim().toLowerCase() === 'owner') throw new HttpError(409, 'reserved', '"Owner" is reserved for the workspace owner.');
+    const dup = S.db.all<{ id: string; name: string }>('SELECT id, name FROM roles').find((r) => r.id !== exceptId && r.name.trim().toLowerCase() === name.trim().toLowerCase());
+    if (dup) throw new HttpError(409, 'duplicate', `A position called "${dup.name}" already exists.`);
+  };
   r.post('/api/roles', (c) => {
     const x = parseRole(c.body, c.user);
+    assertUniqueRole(x.name);
     if ((S.db.get<{ n: number }>('SELECT COUNT(*) n FROM roles'))!.n >= 100) throw bad('Too many roles.');
     const rid = newId();
     S.db.run('INSERT INTO roles(id,name,rank,color,perms,is_owner,created_at) VALUES(?,?,?,?,?,0,?)', rid, x.name, x.rank, x.color, JSON.stringify(x.perms), now());
@@ -284,6 +290,7 @@ export function registerUsers(r: Router) {
     if (!c.user.isOwner) assertCanGrant(c.user, role.permList); // cannot edit a role more powerful than yourself
     if (!c.user.isOwner && c.user.roleId === role.id) throw forbidden('You cannot edit your own role.');
     const x = parseRole(c.body, c.user);
+    assertUniqueRole(x.name, role.id);
     S.db.run('UPDATE roles SET name=?, rank=?, color=?, perms=? WHERE id=?', x.name, x.rank, x.color, JSON.stringify(x.perms), role.id);
     audit(c.user.id, 'role.updated', role.id, x.name + ': ' + x.perms.join(' '), c.ip);
     const affected = S.db.all<{ id: string }>('SELECT id FROM users WHERE role_id=?', role.id).map((u) => u.id);

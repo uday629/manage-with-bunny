@@ -12,6 +12,13 @@ import { newId, now } from './db';
 import { log } from './log';
 
 export const CHUNK = 16 * 1024 * 1024;
+
+// LocalSend-style live progress: everyone else in the chat sees "X is sending file.zip 45%".
+function notifyIncoming(u: { id: string; user_id: string; name: string; size: number; scope: string; scope_id: string }, received: number, done = false) {
+  if (u.scope !== 'conv') return;
+  const to = S.db.all<{ user_id: string }>('SELECT user_id FROM conv_members WHERE conv_id=? AND user_id<>?', u.scope_id, u.user_id).map((r) => r.user_id);
+  S.hub.send(to, done ? { t: 'incoming_done', id: u.id, convId: u.scope_id } : { t: 'incoming', id: u.id, convId: u.scope_id, userId: u.user_id, name: u.name, size: u.size, received });
+}
 const hashes = new Map<string, { h: crypto.Hash; n: number }>();
 const finishing = new Set<string>();
 
@@ -61,6 +68,15 @@ export function fileOut(f: any) {
   return { id: f.id, name: f.name, ext: f.ext, size: f.size, mime: f.mime, uploaderId: f.uploader_id, scope: f.scope, scopeId: f.scope_id, groupId: f.group_id, version: f.version, versions, createdAt: f.created_at, sha: f.sha.slice(0, 12) };
 }
 
+const quiet = new Set<string>();
+function closeQuietUploads() {
+  for (const u of S.db.all("SELECT * FROM uploads WHERE scope='conv' AND updated_at<?", now() - 60000)) {
+    if (quiet.has(u.id)) continue;
+    quiet.add(u.id);
+    notifyIncoming(u as any, u.received, true);
+  }
+  if (quiet.size > 5000) quiet.clear();
+}
 function cleanupUploads() {
   const old = S.db.all('SELECT id FROM uploads WHERE updated_at<?', now() - 48 * 3600000);
   for (const u of old) { try { fs.rmSync(tmpPath(u.id), { force: true }); } catch { /* */ } S.db.run('DELETE FROM uploads WHERE id=?', u.id); hashes.delete(u.id); }
@@ -68,6 +84,7 @@ function cleanupUploads() {
 
 export function registerFiles(r: Router) {
   setInterval(cleanupUploads, 3600000).unref();
+  setInterval(closeQuietUploads, 20000).unref();
 
   r.post('/api/uploads', (c) => {
     const b = c.body;
@@ -89,6 +106,7 @@ export function registerFiles(r: Router) {
     fs.writeFileSync(tmpPath(uid), Buffer.alloc(0));
     S.db.run('INSERT INTO uploads(id,user_id,name,size,received,scope,scope_id,created_at,updated_at) VALUES(?,?,?,?,0,?,?,?,?)', uid, c.user.id, name, size, scope, scopeId, now(), now());
     hashes.set(uid, { h: crypto.createHash('sha256'), n: 0 });
+    if (size > 0) notifyIncoming({ id: uid, user_id: c.user.id, name, size, scope, scope_id: scopeId }, 0);
     return { id: uid, received: 0, chunk: CHUNK };
   }, { rate: { key: 'up', max: 300, windowMs: 60000 } });
 
@@ -127,12 +145,14 @@ export function registerFiles(r: Router) {
     if (n !== declared) { hashes.delete(u.id); fs.truncateSync(tmpPath(u.id), offset); throw bad('Incomplete chunk.'); }
     if (hashable) st!.n += n; else hashes.delete(u.id);
     S.db.run('UPDATE uploads SET received=?, updated_at=? WHERE id=?', offset + n, now(), u.id);
+    quiet.delete(u.id);
+    notifyIncoming(u as any, offset + n);
     return { received: offset + n };
   }, { raw: true, rate: { key: 'chunk', max: 6000, windowMs: 60000 } });
 
   r.del('/api/uploads/:id', (c) => {
     const u = S.db.get('SELECT * FROM uploads WHERE id=? AND user_id=?', vid(c.params.id), c.user.id);
-    if (u) { fs.rmSync(tmpPath(u.id), { force: true }); S.db.run('DELETE FROM uploads WHERE id=?', u.id); hashes.delete(u.id); }
+    if (u) { fs.rmSync(tmpPath(u.id), { force: true }); S.db.run('DELETE FROM uploads WHERE id=?', u.id); hashes.delete(u.id); notifyIncoming(u as any, 0, true); }
     return { ok: true };
   });
 
@@ -171,6 +191,7 @@ export function registerFiles(r: Router) {
         fid, sha, u.name, extOf(u.name), u.size, mime, c.user.id, u.scope, u.scope_id, prev?.group_id ?? fid, (prev?.v ?? 0) + 1, now());
       S.db.run('DELETE FROM uploads WHERE id=?', u.id);
     });
+    notifyIncoming(u as any, u.size, true);
     log.info('upload', { size: u.size });
     return fileOut(S.db.get('SELECT * FROM files WHERE id=?', fid));
     } finally { finishing.delete(u.id); }

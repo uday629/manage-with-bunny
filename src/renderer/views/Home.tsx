@@ -3,6 +3,7 @@ import { Avatar, Btn, Empty, ErrorBox, Icon, Spinner, useAsync } from '../ui';
 import { STATUS } from './Tasks';
 import { WorkLogModal } from './WorkLog';
 import { inviteText } from './NetCheck';
+import { MyAttendance } from './Attendance';
 import { useState } from 'react';
 
 interface Dash { mine: Task[]; review: Task[]; myStats: any; teamStats: any; month: string; remote: { userId: string; open: Task[]; lastUpdate: string | null }[] }
@@ -69,6 +70,7 @@ export function Home() {
       )}
       {error && <ErrorBox text={error} retry={reload} />}
       {loading && !data && <Spinner />}
+      <div style={{ marginBottom: 16 }}><MyAttendance compact /></div>
       {data && <>
         <div className="kpis">
           <div className="kpi hl"><span>Your score this month</span><b>{data.myStats.score ?? '-'}</b><span className="dim">{data.myStats.onTime}/{data.myStats.completed} on time</span></div>

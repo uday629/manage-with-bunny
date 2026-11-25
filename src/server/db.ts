@@ -119,6 +119,11 @@ const MIGRATIONS: string[] = [
    CREATE INDEX tasks_client ON tasks(client);
    CREATE INDEX tasks_done_at ON tasks(completed_at);
    CREATE INDEX worklog_day ON worklog(day);`,
+  // v5: attendance (one row per person per day; days without a row are computed as absent / off / holiday)
+  `CREATE TABLE attendance(user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE, day TEXT NOT NULL,
+     status TEXT NOT NULL CHECK(status IN ('present','late','half','leave','absent','holiday')), check_in INTEGER, check_out INTEGER,
+     note TEXT NOT NULL DEFAULT '', set_by TEXT, updated_at INTEGER NOT NULL, PRIMARY KEY(user_id, day));
+   CREATE INDEX attendance_day ON attendance(day);`,
 ];
 
 function migrate(db: Db) {

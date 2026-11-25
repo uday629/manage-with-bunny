@@ -18,6 +18,8 @@ import { registerFiles, serveFile } from './api-files';
 import { registerTasks } from './api-tasks';
 import { registerRecords } from './api-records';
 import { registerAdmin, backupNow, joinCode } from './api-admin';
+import { registerAttendance } from './api-attendance';
+import { DEFAULT_ROLES } from '../shared/perms';
 import { BEACON_MAGIC, BEACON_PORT, BEACON_GROUP } from '../shared/joincode';
 
 interface StartCfg { dataDir: string; port: number }
@@ -48,6 +50,18 @@ async function start(cfg: StartCfg) {
   if (!S.db.meta('wid')) S.db.setMeta('wid', newId());
   if (!S.db.meta('server_secret')) S.db.setMeta('server_secret', crypto.randomBytes(32).toString('hex'));
   if (!S.db.meta('invite_secret')) S.db.setMeta('invite_secret', crypto.randomBytes(5).toString('hex'));
+  // Existing workspaces: add the newer ready-made positions once, and let HR / Manager handle attendance.
+  if (S.db.get('SELECT 1 FROM roles LIMIT 1') && S.db.meta('roles_v2') !== '1') {
+    S.db.tx(() => {
+      const have = new Set(S.db.all<{ name: string }>('SELECT name FROM roles').map((r) => r.name.toLowerCase()));
+      for (const t of DEFAULT_ROLES) if (t.name !== 'Owner' && !have.has(t.name.toLowerCase()))
+        S.db.run('INSERT INTO roles(id,name,rank,color,perms,is_owner,created_at) VALUES(?,?,?,?,?,0,?)', newId(), t.name, t.rank, t.color, JSON.stringify(t.perms), Date.now());
+      for (const r of S.db.all<{ id: string; perms: string }>("SELECT id, perms FROM roles WHERE is_owner=0 AND lower(name) IN ('hr','manager')")) {
+        const p = JSON.parse(r.perms || '[]'); if (!p.includes('attendance.manage')) { p.push('attendance.manage'); S.db.run('UPDATE roles SET perms=? WHERE id=?', JSON.stringify(p), r.id); }
+      }
+      S.db.setMeta('roles_v2', '1');
+    });
+  }
   S.wid = S.db.meta('wid')!;
   S.secret = Buffer.from(S.db.meta('server_secret')!, 'hex');
   setFilesDir(S.db.meta('files_dir') || path.join(dataDir, 'files'));
@@ -60,7 +74,7 @@ async function start(cfg: StartCfg) {
   const router = new Router();
   router.authenticate = (req) => authenticate(req);
   registerAuth(router); registerUsers(router); registerChat(router); registerFiles(router);
-  registerTasks(router); registerRecords(router); registerAdmin(router);
+  registerTasks(router); registerRecords(router); registerAdmin(router); registerAttendance(router);
 
   server = https.createServer({ cert, key, minVersion: 'TLSv1.2' }, (req, res) => {
     if (moving && req.url?.startsWith('/api/uploads')) { res.writeHead(503, { 'Content-Type': 'application/json' }); res.end('{"error":"busy","message":"The host is moving storage. Try again in a minute."}'); return; }

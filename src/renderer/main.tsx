@@ -10,6 +10,7 @@ const Chat = lazy(() => import('./views/Chat').then((m) => ({ default: m.Chat })
 const Tasks = lazy(() => import('./views/Tasks').then((m) => ({ default: m.Tasks })));
 const Team = lazy(() => import('./views/Team').then((m) => ({ default: m.Team })));
 const Files = lazy(() => import('./views/Files').then((m) => ({ default: m.Files })));
+const Attendance = lazy(() => import('./views/Attendance').then((m) => ({ default: m.Attendance })));
 const Report = lazy(() => import('./views/Report').then((m) => ({ default: m.Report })));
 const Records = lazy(() => import('./views/Records').then((m) => ({ default: m.Records })));
 const Analytics = lazy(() => import('./views/Analytics').then((m) => ({ default: m.Analytics })));
@@ -132,6 +133,13 @@ async function handleEvent(ev: any) {
     case 'pending': await loadPending(); break;
     case 'task': bump('tasks'); break;
     case 'sheet': bump('sheets'); break;
+    case 'attendance': bump('attendance'); break;
+    case 'incoming':
+      setState((st) => ({ incoming: { ...st.incoming, [ev.id]: { id: ev.id, convId: ev.convId, userId: ev.userId, name: ev.name, size: ev.size, received: ev.received, at: Date.now() } } }));
+      break;
+    case 'incoming_done':
+      setState((st) => { const inc = { ...st.incoming }; delete inc[ev.id]; return { incoming: inc }; });
+      break;
     case 'worklog': bump('worklog'); break;
     case 'notify':
       bunny.notify({ title: ev.title, body: ev.body, nav: ev.kind === 'task' ? { route: 'tasks', arg: ev.id } : ev.kind === 'review' ? { route: 'analytics' } : { route: 'admin', arg: 'members' } }).catch(() => {});
@@ -147,6 +155,7 @@ const NAV: { id: string; label: string; icon: string; show?: () => boolean }[] =
   { id: 'tasks', label: 'Tasks', icon: 'tasks' },
   { id: 'team', label: 'Team chart', icon: 'team' },
   { id: 'files', label: 'Files', icon: 'files' },
+  { id: 'attendance', label: 'Attendance', icon: 'clock' },
   { id: 'report', label: 'Work report', icon: 'layers' },
   { id: 'records', label: 'Records', icon: 'records' },
   { id: 'analytics', label: 'Performance', icon: 'chart' },
@@ -162,7 +171,7 @@ function Shell() {
   const pending = useStore((s) => s.pending);
   const meUser = useStore((s) => (s.me ? s.users[s.me.user.id] || s.me.user : null));
   const role = me?.roles.find((r) => r.id === me.user.roleId);
-  const View = { home: Home, chat: Chat, tasks: Tasks, team: Team, files: Files, report: Report, records: Records, analytics: Analytics, admin: Admin, settings: Settings }[route] || Home;
+  const View = { home: Home, chat: Chat, tasks: Tasks, team: Team, files: Files, report: Report, attendance: Attendance, records: Records, analytics: Analytics, admin: Admin, settings: Settings }[route] || Home;
   return (
     <div className="shell">
       <div className="titlebar" />

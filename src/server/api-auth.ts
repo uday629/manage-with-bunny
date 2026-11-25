@@ -66,6 +66,7 @@ export function registerAuth(r: Router) {
       S.db.run(`INSERT INTO users(id,username,display_name,title,role_id,status,is_owner,kdf_salt,auth_hash,pubkey,enc_priv,color,created_at,approved_at,device_name)
         VALUES(?,?,?,?,?,'active',1,?,?,?,?,?,?,?,?)`, uid, uname, display, 'Owner', ownerRole, k.salt, hash, k.pubkey, k.encPriv, '#FF8A00', now(), now(), k.device);
       S.db.setMeta('workspace_name', name);
+      S.db.setMeta('roles_v2', '1');
     });
     setupToken = '';
     invalidateTree();
